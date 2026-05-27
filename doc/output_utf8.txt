@@ -1,0 +1,615 @@
+Requirement
+1. GIỚI THIỆU DỰ ÁN
+1.1 Mô tả dự án
+Dự án xây dựng một website bán vòng cổ tích hợp công nghệ AR 2.5D cho phép người dùng thử vòng cổ trực tiếp thông qua camera hoặc thông qua ảnh chân dung tải lên.
+Hệ thống hỗ trợ các chức năng thương mại điện tử cơ bản như:
+Quản lý sản phẩm
+Quản lý giỏ hàng
+Thanh toán COD
+Quản lý đơn hàng
+Quản lý khách hàng
+Thống kê doanh thu
+Ngoài ra hệ thống còn hỗ trợ chức năng thử vòng cổ bằng AR sử dụng nhận diện khuôn mặt để hiển thị hình ảnh vòng cổ đúng vị trí trên cổ người dùng.
+
+2. ACTORS
+
+Actor
+Mô tả
+Guest
+Người dùng chưa đăng nhập
+User
+Người dùng đã đăng nhập
+Manager
+Quản lý nghiệp vụ bán hàng
+Admin
+Quản trị hệ thống
+
+
+3. DANH SÁCH USE CASE
+3.1 Guest Use Cases
+
+ID
+Use Case
+UC01
+Đăng ký
+UC02
+Đăng nhập bằng Email/Password
+UC03
+Đăng nhập bằng Google
+UC04
+Xem danh sách sản phẩm
+UC05
+Xem chi tiết sản phẩm
+UC06
+Thử vòng cổ bằng AR Camera
+UC07
+Upload ảnh để thử vòng cổ
+UC08
+Tìm kiếm sản phẩm
+UC09
+Filter sản phẩm
+UC34 
+Xem Collection 
+
+
+3.2 User Use Cases
+
+ID
+Use Case
+UC10
+Quản lý profile
+UC11
+Quản lý địa chỉ
+UC12
+Đổi mật khẩu
+UC13
+Thêm vào giỏ hàng
+UC14
+Quản lý giỏ hàng
+UC15
+Thanh toán COD
+UC16
+Xem danh sách đơn hàng
+UC17
+Hủy đơn hàng
+UC18
+Lưu ảnh AR
+UC19
+Đánh giá sản phẩm
+UC20
+Yêu thích sản phẩm
+UC21
+Đăng xuất
+
+
+
+3.3 Manager Use Cases
+
+ID
+Use Case
+UC22
+Quản lý sản phẩm
+UC23
+Quản lý ảnh sản phẩm
+UC24
+Quản lý tài nguyên AR
+UC25
+Quản lý Collection
+UC26
+Quản lý Slide
+UC27
+Quản lý đơn hàng
+UC28
+Quản lý khách hàng
+UC29
+Quản lý Review
+UC30
+Xem thống kê doanh thu
+
+
+
+3.4 Admin Use Cases
+
+ID
+Use Case
+UC31
+Quản lý tài khoản
+UC32
+Khóa / Mở khóa tài khoản
+UC33
+Phân quyền tài khoản
+
+
+4. MÔ TẢ CHI TIẾT USE CASE
+
+UC01 – Đăng ký
+Actor
+Guest
+Mô tả
+Người dùng tạo tài khoản mới để sử dụng hệ thống.
+Main Flow
+Người dùng mở form đăng ký.
+Người dùng nhập:
+Họ tên
+Email
+Password
+Confirm Password
+Hệ thống kiểm tra dữ liệu.
+Hệ thống tạo tài khoản mới.
+Hiển thị thông báo đăng ký thành công.
+Alternative Flow
+A1 – Email đã tồn tại
+Hệ thống hiển thị: Email already exists
+A2 – Confirm password không khớp
+Hệ thống hiển thị: Password confirmation does not match
+
+UC02 – Đăng nhập bằng Email/Password
+Actor
+Guest
+Mô tả
+Người dùng đăng nhập bằng email và mật khẩu.
+Main Flow
+Người dùng nhập email và password.
+Hệ thống xác thực tài khoản.
+Hệ thống tạo JWT Token hoặc Session.
+Người dùng đăng nhập thành công.
+Alternative Flow
+A1 – Sai tài khoản hoặc mật khẩu
+Hệ thống hiển thị: Invalid email or password
+A2 – Tài khoản bị khóa
+Hệ thống hiển thị: Your account has been locked
+
+UC03 – Đăng nhập bằng Google
+Actor
+Guest
+Mô tả
+Người dùng đăng nhập bằng tài khoản Google.
+Main Flow
+Người dùng chọn “Login with Google”.
+Hệ thống chuyển sang Google OAuth.
+Người dùng chọn tài khoản Google.
+Google xác thực thành công.
+Hệ thống đăng nhập người dùng.
+
+UC04 – Xem danh sách sản phẩm
+Actor
+Guest/User
+Mô tả
+Hiển thị danh sách sản phẩm trên hệ thống.
+Main Flow
+Người dùng truy cập trang sản phẩm.
+Hệ thống hiển thị:
+Hình ảnh sản phẩm
+Tên sản phẩm
+Giá
+Collection
+Người dùng có thể:
+Search
+Filter
+Sort
+
+UC05 – Xem chi tiết sản phẩm
+Actor
+Guest/User
+Mô tả
+Hiển thị thông tin chi tiết sản phẩm.
+Main Flow
+Người dùng chọn sản phẩm.
+Hệ thống hiển thị:
+Danh sách ảnh sản phẩm
+Mô tả
+Giá
+Size
+Review
+Nút thử AR
+
+UC06 – Thử vòng cổ bằng AR Camera
+Actor
+Guest/User
+Mô tả
+Người dùng thử vòng cổ trực tiếp bằng camera.
+Main Flow
+Người dùng chọn “Try With AR”.
+Hệ thống yêu cầu quyền camera.
+Người dùng cấp quyền camera.
+Hệ thống mở camera.
+Hệ thống detect khuôn mặt.
+Hệ thống render vòng cổ bằng AR.
+Người dùng có thể:
+Đổi vòng cổ
+Đổi size
+Chụp ảnh
+Lưu ảnh
+Alternative Flow
+A1 – Người dùng từ chối quyền camera
+Hệ thống hiển thị: Camera permission denied
+A2 – Không detect được khuôn mặt
+Hệ thống hiển thị: Face not detected
+
+UC07 – Upload ảnh để thử vòng cổ
+Actor
+Guest/User
+Mô tả
+Người dùng upload ảnh chân dung để thử vòng cổ.
+Main Flow
+Người dùng upload ảnh chân dung.
+Hệ thống detect khuôn mặt.
+Hệ thống xác định vị trí cổ.
+Hệ thống ghép vòng cổ.
+Hiển thị ảnh kết quả.
+
+UC08 – Tìm kiếm sản phẩm
+Actor
+Guest/User
+Mô tả
+Tìm kiếm sản phẩm theo từ khóa.
+Main Flow
+Người dùng nhập keyword.
+Hệ thống tìm kiếm theo:
+Tên sản phẩm
+Collection
+Hiển thị kết quả.
+
+UC09 – Filter sản phẩm
+Actor
+Guest/User
+Mô tả
+Lọc sản phẩm theo điều kiện.
+Main Flow
+Người dùng filter theo:
+Collection
+Giá
+Material
+Size
+
+UC10 – Quản lý Profile
+Actor
+User
+Mô tả
+Người dùng cập nhật thông tin cá nhân.
+Main Flow
+Người dùng mở Profile Page.
+Người dùng cập nhật:
+Avatar
+Full Name
+Phone
+Hệ thống lưu thay đổi.
+
+UC11 – Quản lý địa chỉ
+Actor
+User
+Mô tả
+Người dùng quản lý danh sách địa chỉ giao hàng.
+Main Flow
+Người dùng mở “My Addresses”.
+Người dùng có thể:
+Thêm địa chỉ
+Sửa địa chỉ
+Xóa địa chỉ
+Chọn địa chỉ mặc định
+Hệ thống lưu dữ liệu.
+Checkout Address Flow
+Người dùng checkout đơn hàng.
+Hệ thống hiển thị danh sách địa chỉ.
+Người dùng chọn địa chỉ giao hàng.
+Nếu người dùng không chọn:
+Hệ thống sử dụng địa chỉ mặc định.
+
+UC12 – Đổi mật khẩu
+Actor
+User
+Mô tả
+Người dùng thay đổi mật khẩu tài khoản.
+Main Flow
+Người dùng nhập:
+Current Password
+New Password
+Confirm Password
+Hệ thống validate dữ liệu.
+Hệ thống cập nhật mật khẩu mới.
+Alternative Flow
+A1 – Sai mật khẩu cũ
+Hệ thống hiển thị: Current password is incorrect
+A2 – Password không hợp lệ
+Hệ thống hiển thị: Password does not meet security requirements
+
+UC13 – Thêm vào giỏ hàng
+Actor
+User
+Mô tả
+Người dùng thêm sản phẩm vào giỏ hàng.
+Main Flow
+Người dùng chọn:
+Sản phẩm
+Size
+Quantity
+Người dùng chọn “Add To Cart”.
+Hệ thống thêm sản phẩm vào giỏ hàng.
+
+UC14 – Quản lý giỏ hàng
+Actor
+User
+Mô tả
+Người dùng quản lý các sản phẩm trong giỏ hàng.
+Main Flow
+Người dùng có thể:
+Tăng giảm số lượng
+Xóa sản phẩm
+Chọn sản phẩm checkout
+
+UC15 – Thanh toán COD
+Actor
+User
+Mô tả
+Người dùng thanh toán bằng phương thức COD.
+Main Flow
+Người dùng mở Checkout Page.
+Người dùng chọn địa chỉ giao hàng.
+Người dùng nhập Note.
+Người dùng chọn phương thức COD.
+Hệ thống tạo Order.
+Hiển thị: Order placed successfully
+
+UC16 – Xem danh sách đơn hàng
+Actor
+User
+Mô tả
+Người dùng xem danh sách đơn hàng đã đặt.
+Main Flow
+Người dùng mở “My Orders”.
+Hệ thống hiển thị:
+Order ID
+Order Date
+Total Amount
+Order Status
+
+UC17 – Hủy đơn hàng
+Actor
+User
+Mô tả
+Người dùng hủy đơn hàng chưa được xác nhận.
+Điều kiện
+Chỉ cho phép hủy khi trạng thái đơn hàng là PENDING.
+Main Flow
+Người dùng chọn đơn hàng.
+Người dùng chọn “Cancel Order”.
+Hệ thống cập nhật trạng thái: CANCELLED
+
+UC18 – Lưu ảnh AR
+Actor
+User
+Mô tả
+Người dùng lưu ảnh thử AR về thiết bị.
+Main Flow
+Người dùng chụp ảnh AR.
+Hệ thống render ảnh.
+Người dùng chọn “Download”.
+Ảnh được lưu về thiết bị.
+
+UC19 – Đánh giá sản phẩm
+Actor
+User
+Mô tả
+Người dùng đánh giá sản phẩm.
+Main Flow
+Người dùng chọn rating.
+Người dùng nhập comment.
+Hệ thống lưu review.
+
+UC20 – Yêu thích sản phẩm
+Actor
+User
+Mô tả
+Người dùng thêm sản phẩm vào danh sách yêu thích.
+Main Flow
+Người dùng chọn icon heart.
+Hệ thống thêm sản phẩm vào favorites.
+
+UC21 – Đăng xuất
+Actor
+User
+Mô tả
+Người dùng đăng xuất khỏi hệ thống.
+Main Flow
+Người dùng chọn Logout.
+Hệ thống xóa Token hoặc Session.
+Chuyển về Homepage.
+
+UC22 – Quản lý sản phẩm
+Actor
+Manager
+Mô tả
+Manager quản lý thông tin sản phẩm.
+Main Flow
+Manager có thể:
+Thêm sản phẩm
+Sửa sản phẩm
+Xóa sản phẩm
+Quản lý Size
+Quản lý Stock
+Gán Collection
+
+UC23 – Quản lý ảnh sản phẩm
+Actor
+Manager
+Mô tả
+Manager quản lý ảnh hiển thị sản phẩm trên website.
+Main Flow
+Manager có thể:
+Upload ảnh sản phẩm
+Thay đổi thumbnail
+Xóa ảnh sản phẩm
+Preview ảnh sản phẩm
+
+UC24 – Quản lý tài nguyên AR
+Actor
+Manager
+Mô tả
+Manager quản lý ảnh và cấu hình dùng cho AR.
+Main Flow
+Manager chọn sản phẩm.
+Manager upload ảnh PNG dùng cho AR.
+Manager cấu hình:
+Scale
+Offset
+Rotation
+Hệ thống lưu cấu hình AR.
+
+UC25 – Quản lý Collection
+Actor: Manager
+Mô tả: Manager quản lý bộ sưu tập sản phẩm và nội dung giới thiệu của bộ sưu tập.
+Preconditions:
+Manager đã đăng nhập
+Manager có quyền quản lý Collection
+Postconditions:
+Collection được tạo hoặc cập nhật thành công
+Main Flow:
+Manager có thể:
+Thêm Collection
+Sửa Collection
+Xóa Collection
+Upload thumbnail collection
+Upload banner collection
+Cập nhật mô tả collection
+Gán sản phẩm vào collection
+Xóa sản phẩm khỏi collection
+Bật/tắt trạng thái hiển thị collection
+Thông tin Collection bao gồm:
+Tên Collection
+Description
+Thumbnail
+Banner
+Trạng thái hiển thị
+Alternative Flow:
+A1. Collection không có sản phẩm
+Hệ thống vẫn cho phép tạo collection
+A2. Collection bị ẩn
+Collection sẽ không hiển thị ngoài trang người dùng
+Exception Flow:
+E1. Tên Collection bị trùng
+Hệ thống hiển thị: Collection name already exists
+E2. Ảnh upload không hợp lệ
+Hệ thống hiển thị: Invalid image format
+E3. File ảnh quá lớn
+Hệ thống hiển thị: File size exceeds limit
+
+
+UC26 – Quản lý Slide
+Actor
+Manager
+Mô tả
+Manager quản lý banner và slideshow.
+Main Flow
+Manager có thể:
+Thêm slide
+Sửa slide
+Xóa slide
+Thay đổi thứ tự hiển thị
+
+UC27 – Quản lý đơn hàng
+Actor
+Manager
+Mô tả
+Manager quản lý trạng thái đơn hàng.
+Main Flow
+Manager có thể:
+Xem danh sách Order
+Confirm Order
+Shipping Order
+Complete Order
+Cancel Order
+
+UC28 – Quản lý khách hàng
+Actor
+Manager
+Mô tả
+Manager quản lý thông tin khách hàng và lịch sử mua hàng.
+Main Flow
+Manager có thể:
+Xem danh sách khách hàng
+Tìm kiếm khách hàng
+Xem lịch sử mua hàng
+Xem thông tin giao hàng
+
+UC29 – Quản lý Review
+Actor
+Manager
+Mô tả
+Manager quản lý review sản phẩm.
+Main Flow
+Manager có thể:
+Xem review
+Ẩn review
+Xóa review vi phạm
+
+UC30 – Xem thống kê doanh thu
+Actor
+Manager
+Mô tả
+Manager xem dashboard thống kê doanh thu.
+Main Flow
+Hệ thống hiển thị:
+Doanh thu theo ngày
+Doanh thu theo tháng
+Số lượng đơn hàng
+Top sản phẩm bán chạy
+Biểu đồ thống kê
+
+UC31 – Quản lý tài khoản
+Actor
+Admin
+Mô tả
+Admin quản lý tài khoản hệ thống.
+Main Flow
+Admin có thể:
+Xem danh sách tài khoản
+Tìm kiếm tài khoản
+Xem thông tin người dùng
+
+UC32 – Khóa / Mở khóa tài khoản
+Actor
+Admin
+Mô tả
+Admin khóa hoặc mở khóa tài khoản người dùng.
+Main Flow
+Admin chọn tài khoản.
+Admin:
+Lock Account
+Unlock Account
+Hệ thống cập nhật trạng thái tài khoản.
+
+UC33 – Phân quyền tài khoản
+Actor
+Admin
+Mô tả
+Admin phân quyền tài khoản hệ thống.
+Main Flow
+Admin chọn tài khoản.
+Admin thay đổi Role:
+USER
+MANAGER
+ADMIN
+Hệ thống cập nhật quyền tài khoản.
+
+UC34 - Xem Collection
+Actor: Guest/User
+Mô tả: Người dùng xem thông tin bộ sưu tập và danh sách sản phẩm thuộc bộ sưu tập.
+Main Flow:
+Người dùng chọn Collection
+Hệ thống hiển thị:
+Banner Collection
+Tên Collection
+Description
+Danh sách sản phẩm thuộc Collection
+Người dùng có thể chọn sản phẩm để xem chi tiết
+Alternative Flow:
+A1. Collection không có sản phẩm
+Hệ thống hiển thị: No products available in this collection
+Exception Flow:
+E1. Không tìm thấy Collection
+Hệ thống hiển thị: Collection not found
+
+Flow
+ Luồng chính của dự án:  - khách hàng vào trang web xem danh sách sản phẩm, sau khi chọn sản phẩm ưng ý khách hàng có thể chọn thử vòng cổ, từ đây chuyển sang phần thử vòng cổ và yêu cầu khách hàng cấp quyền camera , sau khi được cấp quyền khách hàng sẽ được thử vòng cổ thông qua công nghệ AR 2.5D tương tự như trang mirrar.com cho phép người dùng chọn kích cỡ và được thử các vòng cổ khác(ở đây camera sẽ nhận diện khuôn mặt để hiển thị hình ảnh ở đúng phần cổ của người dùng) hoặc có thể cho người dùng tải ảnh chân dung lên và ghép ảnh vòng cổ vào đúng phần cổ của ảnh mà người dùng tải lên. Tiếp đến khi thử thành công người dùng có thể lưu ảnh về máy hoặc thêm sản phẩm vào giỏ hàng. Sau khi vào giỏ hàng khách hàng sẽ chọn các sản phẩm muốn thanh toán và chuyển tiếp đến trang thanh toán. Ở trang thanh toán hiển thị các trường thông tin như số điện thoại địa, chỉ giao hàng, tên người nhận, note, chọn phương thức thanh toán(có 1 phương thức thanh toán là COD ).Sau khi thanh toán thành công ,khách hàng sẽ phải chờ manager duyệt đơn hàng và có thể xem tình trạng đơn hàng qua chức năng quản lý order ở đây sẽ xem được tất cả các đơn hàng mà người dùng này đã đặt và tình trạng của các đơn hàng . những đơn hàng chưa được manager duyệt thì khách hàng có thể hủy đơn hàng nhưng sau khi được duyệt thì khách hàng không thể hủy đơn nữa.
+
+Database
