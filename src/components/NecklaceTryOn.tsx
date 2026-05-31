@@ -206,12 +206,17 @@ function fuseNeckFromFacePose(
   if (face && pose) {
     const faceNormX = face.x / W;
     const edgePenalty = clamp(Math.abs(faceNormX - 0.5) * 2.4, 0, 0.55);
-    const wp = clamp(0.72 + edgePenalty, 0.72, 0.92);
+    
+    // Nếu là ảnh selfie/chân dung cận cảnh (chiều rộng khuôn mặt > 15% chiều rộng ảnh),
+    // ưu tiên cực cao cho khuôn mặt (85%) để tránh lệch vị trí do vai bị cắt ở rìa ảnh.
+    const isSelfie = face.width > W * 0.15;
+    const wp = isSelfie ? 0.15 : clamp(0.72 + edgePenalty, 0.72, 0.92);
     const wf = 1 - wp;
+    
     return {
       x: face.x * wf + pose.x * wp,
       y: face.y * wf + pose.y * wp,
-      width: face.width * 0.3 + pose.width * 0.7,
+      width: isSelfie ? (face.width * 0.7 + pose.width * 0.3) : (face.width * 0.3 + pose.width * 0.7),
       roll: face.roll,
     };
   }
@@ -989,29 +994,50 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const imgDataUrl = (e.target?.result as string) ?? null;
-      setPhoto(imgDataUrl);
+      const rawImgUrl = (e.target?.result as string) ?? null;
+      if (!rawImgUrl) return;
+
       setCameraError(null);
       setFaceScanning(true);
 
       const img = new Image();
       img.onload = () => {
+        // Giới hạn kích thước ảnh tối đa (ví dụ 1000px) để tối ưu hóa hiệu suất MediaPipe & vẽ Canvas
+        const maxDim = 1000;
+        let w = img.width || 640;
+        let h = img.height || 480;
+
+        if (w > maxDim || h > maxDim) {
+          if (w > h) {
+            h = Math.round((h * maxDim) / w);
+            w = maxDim;
+          } else {
+            w = Math.round((w * maxDim) / h);
+            h = maxDim;
+          }
+        }
+
         const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = img.width || 640;
-        tempCanvas.height = img.height || 480;
+        tempCanvas.width = w;
+        tempCanvas.height = h;
         const tempCtx = tempCanvas.getContext("2d");
         if (tempCtx) {
-          tempCtx.drawImage(img, 0, 0, tempCanvas.width, tempCanvas.height);
+          tempCtx.drawImage(img, 0, 0, w, h);
+          const resizedDataUrl = tempCanvas.toDataURL("image/jpeg", 0.9);
+          
+          // Lưu ảnh đã resize làm ảnh hiển thị chính thức
+          setPhoto(resizedDataUrl);
 
-          const neck = detectNeckPosition(tempCtx, tempCanvas.width, tempCanvas.height);
+          const neck = detectNeckPosition(tempCtx, w, h);
 
           setTimeout(() => {
             setFaceScanning(false);
             if (neck && !simulateNoFace) {
-              const calculatedScale = (neck.width / tempCanvas.width) * 100 * 1.1;
+              const calculatedScale = (neck.width / w) * 200 * 1.1;
 
-              setOffsetY(55); // Giữ mốc 55 làm vị trí cân bằng chuẩn trên cổ nhận diện được
-              setScale(Math.max(30, Math.min(100, Math.round(calculatedScale))));
+              const defaultOffsetY = selected.arOffsetY !== undefined ? selected.arOffsetY : 55;
+              setOffsetY(defaultOffsetY);
+              setScale(Math.max(20, Math.min(150, Math.round(calculatedScale))));
               setOffsetX(0);
               setRotation(0);
 
@@ -1038,17 +1064,19 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
                 setFaceDetected(false);
                 toast.error("Không phát hiện khuôn mặt trên ảnh tải lên! (Face not detected)");
               } else {
-                setOffsetY(55);
-                setScale(60);
+                const defaultOffsetY = selected.arOffsetY !== undefined ? selected.arOffsetY : 55;
+                const defaultScale = selected.arScale !== undefined ? selected.arScale : 60;
+                setOffsetY(defaultOffsetY);
+                setScale(defaultScale);
                 setOffsetX(0);
                 setRotation(0);
-                targetPos.current.x = tempCanvas.width / 2;
-                targetPos.current.y = tempCanvas.height * 0.55;
-                lastTargetX.current = tempCanvas.width / 2;
-                lastTargetY.current = tempCanvas.height * 0.55;
+                targetPos.current.x = w / 2;
+                targetPos.current.y = h * 0.55;
+                lastTargetX.current = w / 2;
+                lastTargetY.current = h * 0.55;
                 smoothedNeck.current = {
-                  x: tempCanvas.width / 2,
-                  y: tempCanvas.height * 0.55,
+                  x: w / 2,
+                  y: h * 0.55,
                   width: 120,
                   roll: 0,
                 };
@@ -1062,7 +1090,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
           }, 1000);
         }
       };
-      img.src = imgDataUrl;
+      img.src = rawImgUrl;
     };
     reader.readAsDataURL(file);
   };
@@ -1270,37 +1298,65 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
     transparentNecklace,
   ]);
 
-  // Vẽ static photo đè vòng cổ lên canvas kết hợp 4 trục
+  // === CRITICAL: Dùng kích thước CONTAINER và cover fit giống hệt renderLiveAR ===
   const renderStaticPhotoAR = useCallback(() => {
     const canvas = displayCanvasRef.current;
     const baseImg = loadedPhotoImg.current;
     if (!canvas || cameraActive || !photo || !baseImg) return;
 
-    const cssW = baseImg.width || 640;
-    const cssH = baseImg.height || 480;
+    // Sử dụng kích thước container (giống hệt live camera)
+    const parent = canvas.parentElement;
+    const cssW = Math.max(1, Math.round(parent?.clientWidth || 640));
+    const cssH = Math.max(1, Math.round(parent?.clientHeight || 480));
     const ctx = setCanvasToHiDPI(canvas, cssW, cssH);
     if (!ctx) return;
 
-    ctx.drawImage(baseImg, 0, 0, cssW, cssH);
+    // Vẽ ảnh bằng cover fit (giống drawVideoCover cho live camera)
+    const imgW = baseImg.naturalWidth || baseImg.width || 640;
+    const imgH = baseImg.naturalHeight || baseImg.height || 480;
+    const imgAspect = imgW / imgH;
+    const containerAspect = cssW / cssH;
 
-    // 2. Vẽ vòng cổ đã khử nền trong suốt lên trên
+    let sx = 0, sy = 0, sWidth = imgW, sHeight = imgH;
+    if (imgAspect > containerAspect) {
+      sWidth = imgH * containerAspect;
+      sx = (imgW - sWidth) * 0.5;
+    } else if (imgAspect < containerAspect) {
+      sHeight = imgW / containerAspect;
+      sy = (imgH - sHeight) * 0.5;
+    }
+    ctx.drawImage(baseImg, sx, sy, sWidth, sHeight, 0, 0, cssW, cssH);
+
+    // 2. Vẽ vòng cổ — map tọa độ từ image-space sang container-space
     if (faceDetected && transparentNecklace) {
-      // Áp dụng tỉ lệ co giãn động tương tự
+      // Map tọa độ cổ (được detect trong image-space) sang container-space
+      const neckX = ((smoothedNeck.current.x - sx) / sWidth) * cssW;
+      const neckY = ((smoothedNeck.current.y - sy) / sHeight) * cssH;
+
+      // Tỉ lệ co giãn động (ratio không thay đổi khi map)
       const scaleMultiplier =
         baseNeckWidth.current > 0 ? smoothedNeck.current.width / baseNeckWidth.current : 1;
-      const limitScaleMult = Math.max(0.65, Math.min(1.45, scaleMultiplier));
+      const limitScaleMult = clamp(scaleMultiplier, 0.62, 1.45);
       const currentScale = scale * limitScaleMult;
 
+      // Kích thước vòng cổ tính theo container-space (giống hệt live camera)
       const w = cssW * (currentScale / 100) * 0.5;
       const aspectRatio = transparentNecklace.height / transparentNecklace.width;
       const h = w * aspectRatio;
 
-      const posX = targetPos.current.x;
-      const posY = targetPos.current.y;
+      const roll = smoothedNeck.current.roll || 0;
+      const rollRad = (roll * Math.PI) / 180;
+      const sideLockX = Math.sin(rollRad) * (w * 0.14);
+      const tiltLiftY = (1 - Math.cos(rollRad)) * (h * 0.34);
 
-      const centerX = posX + cssW * (offsetX / 100);
+      // Công thức vị trí GIỐNG HỆT renderLiveAR
+      const centerBiasX = cssW * 0.01;
+      const basePosX = neckX + cssW * (offsetX / 100) + centerBiasX;
+      const basePosY = neckY + cssH * ((offsetY - 55) / 100);
+
+      const centerX = basePosX + sideLockX;
       const neckDrop = h * 0.16 + cssH * 0.006;
-      const centerY = posY + cssH * ((offsetY - 55) / 100) + neckDrop;
+      const centerY = basePosY + neckDrop - tiltLiftY;
 
       drawNecklaceWrapped(
         ctx,
@@ -1310,7 +1366,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
         w,
         h,
         rotation,
-        smoothedNeck.current.roll || 0,
+        roll,
       );
     }
   }, [cameraActive, photo, faceDetected, transparentNecklace, scale, offsetY, offsetX, rotation]);
