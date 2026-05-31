@@ -5,6 +5,7 @@ import { TopBar, NavBar, Footer } from "@/components/SiteChrome";
 import { getProduct } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
 import { toast } from "sonner";
+import { formatProductPrice } from "@/lib/utils";
 
 type CheckoutSearch = { slug?: string; qty?: number; size?: string };
 
@@ -28,8 +29,11 @@ export const Route = createFileRoute("/thanh-toan")({
   component: CheckoutPage,
 });
 
-const parsePrice = (p: string) => parseInt(p.replace(/[^\d]/g, ""), 10) || 0;
-const formatPrice = (n: number) => n.toLocaleString("vi-VN") + "VNĐ";
+const parsePrice = (p: any) => {
+  if (typeof p === "number") return p;
+  return parseInt(String(p || "").replace(/[^\d]/g, ""), 10) || 0;
+};
+const formatPrice = (n: number) => formatProductPrice(n);
 
 const PROVINCES: Record<string, string[]> = {
   "Hà Nội": ["Ba Đình", "Hoàn Kiếm", "Cầu Giấy", "Đống Đa", "Thạch Thất"],

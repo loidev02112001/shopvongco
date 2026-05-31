@@ -113,8 +113,29 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useStore } from "../lib/store";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const { currentUser } = useStore();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (currentUser && (currentUser.role === "MANAGER" || currentUser.role === "ADMIN")) {
+      if (location.pathname !== "/admin") {
+        setTimeout(() => {
+          navigate({ to: "/admin" });
+          toast.info("Tài khoản Quản trị/Quản lý được chuyển hướng trực tiếp đến trang quản trị riêng.", {
+            description: "Vai trò quản trị bị giới hạn truy cập giao diện khách hàng thông thường."
+          });
+        }, 0);
+      }
+    }
+  }, [currentUser, location.pathname, navigate]);
 
   return (
     <QueryClientProvider client={queryClient}>

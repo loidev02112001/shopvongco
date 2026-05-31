@@ -1,8 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { Heart, X } from "lucide-react";
-import { TopBar, NavBar, Footer } from "@/components/SiteChrome";
+import { TopBar, NavBar, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
 import { getProduct } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
+import { formatProductPrice } from "@/lib/utils";
 
 export const Route = createFileRoute("/yeu-thich")({
   head: () => ({
@@ -15,7 +17,14 @@ export const Route = createFileRoute("/yeu-thich")({
 });
 
 function WishlistPage() {
-  const { wishlist } = useStore();
+  const { wishlist, currentUser, isProductsLoaded } = useStore();
+
+  useEffect(() => {
+    if (currentUser) {
+      storeActions.fetchWishlist();
+    }
+  }, [currentUser]);
+
   const items = wishlist
     .map((slug) => getProduct(slug))
     .filter((p): p is NonNullable<typeof p> => !!p);
@@ -29,7 +38,7 @@ function WishlistPage() {
           <Heart className="w-6 h-6" /> SẢN PHẨM YÊU THÍCH
         </h1>
 
-        {items.length === 0 ? (
+        {items.length === 0 && isProductsLoaded ? (
           <div className="py-16 text-center text-muted-foreground">
             Bạn chưa có sản phẩm yêu thích nào.{" "}
             <Link to="/bo-suu-tap" className="text-brand underline">
@@ -38,9 +47,13 @@ function WishlistPage() {
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
-            {items.map((p) => (
-              <div
-                key={p.slug}
+            {!isProductsLoaded
+              ? Array.from({ length: wishlist.length || 4 }).map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))
+              : items.map((p) => (
+                  <div
+                    key={p.slug}
                 className="bg-white rounded-md overflow-hidden group relative"
               >
                 <button
@@ -64,7 +77,7 @@ function WishlistPage() {
                     <h3 className="text-sm text-foreground/80 leading-snug min-h-[40px]">
                       {p.name}
                     </h3>
-                    <p className="mt-2 text-price font-bold">{p.price}</p>
+                    <p className="mt-2 text-price font-bold">{formatProductPrice(p.price)}</p>
                   </div>
                 </Link>
                 <div className="px-4 pb-4">

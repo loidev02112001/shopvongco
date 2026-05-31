@@ -1,5 +1,10 @@
 import { useSyncExternalStore } from "react";
 import { supabase, isSupabaseConfigured } from "./supabase";
+import { toast } from "sonner";
+
+import heroAr from "@/assets/hero-ar.png";
+import caraLunaBanner from "@/assets/cara-luna-banner.png";
+import tryonArBanner from "@/assets/tryon-ar-banner.png";
 
 export type CartItem = { slug: string; qty: number; size: string };
 
@@ -37,6 +42,7 @@ export type ProductReview = {
   rating: number;
   comment: string;
   date: string;
+  isHidden?: boolean; // UC29
 };
 
 export type OrderItem = {
@@ -71,6 +77,26 @@ export type Product = {
   specs: any;
   info: string;
   collectionId?: string;
+  images?: string[];
+};
+
+export type Collection = {
+  id: string;
+  name: string;
+  title: string;
+  intro: string;
+  banner: string;
+  thumbnail: string;
+  isVisible: boolean;
+};
+
+export type Slide = {
+  id: string;
+  title?: string;
+  subtitle?: string;
+  image: string;
+  link?: string;
+  sortOrder: number;
 };
 
 type State = {
@@ -81,6 +107,9 @@ type State = {
   reviews: ProductReview[];
   products: Product[];
   orders: Order[];
+  collections: Collection[];
+  slides: Slide[];
+  isProductsLoaded: boolean;
 };
 
 const STORAGE_KEY = "luna-jewel-store-v2";
@@ -152,29 +181,6 @@ const defaultReviews: ProductReview[] = [
   }
 ];
 
-function load(): State {
-  if (typeof window === "undefined")
-    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [] };
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [] };
-    const parsed = JSON.parse(raw);
-    return {
-      cart: Array.isArray(parsed.cart) ? parsed.cart : [],
-      wishlist: Array.isArray(parsed.wishlist) ? parsed.wishlist : [],
-      currentUser: parsed.currentUser ?? null,
-      accounts: Array.isArray(parsed.accounts) ? parsed.accounts : [],
-      reviews: Array.isArray(parsed.reviews) ? parsed.reviews : defaultReviews,
-      products: Array.isArray(parsed.products) ? parsed.products : [],
-      orders: Array.isArray(parsed.orders) ? parsed.orders : [],
-    };
-  } catch {
-    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [] };
-  }
-}
-
-let state: State = load();
-
 // Simple hash for demo (NOT for production)
 function simpleHash(str: string): string {
   let hash = 0;
@@ -184,12 +190,193 @@ function simpleHash(str: string): string {
   }
   return hash.toString(16);
 }
+
+export const defaultCollections: Collection[] = [
+  {
+    id: "graceful-muse",
+    name: "Nàng Thơ Thanh Lịch",
+    title: "The Graceful Muse - Nàng Thơ Thanh Lịch",
+    intro: "Lấy cảm hứng từ hình ảnh thiên nga — biểu tượng của sự thanh khiết, thủy chung và vẻ đẹp trường tồn — bộ sưu tập tôn vinh người phụ nữ mang khí chất thanh tao đầy cuốn hút. Mỗi thiết kế là sự hòa quyện giữa đường nét mềm mại của đôi cánh thiên nga, ánh bạc sang trọng và những viên đá lấp lánh, khắc họa hình ảnh người phụ nữ hiện đại: thanh lịch, duyên dáng và sở hữu vẻ đẹp vượt lên mọi xu hướng.",
+    banner: "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=1200&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80",
+    isVisible: true
+  },
+  {
+    id: "huong-sac-mua-he",
+    name: "Hương Sắc Mùa Hè",
+    title: "Hương Sắc Mùa Hè - Nốt Nhạc Tự Do",
+    intro: "Chúng mình gói ghém toàn bộ khoảnh khắc bình yên và trong trẻo vào bộ sưu tập 'Hương Sắc Mùa Hè'. Một chiếc dây chuyền hình bướm thanh mảnh, đính những viên đá sáng trong như giọt nước, chính là 'làn gió mát' hoàn hảo cho diện mạo của bạn — nhẹ nhàng khẽ chạm vào xương quai xanh, biến bạn trở thành nàng thơ tự do, rạng rỡ dưới ánh mặt trời.",
+    banner: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=600&q=80",
+    isVisible: true
+  },
+  {
+    id: "thanh-nha-ngan-hoa",
+    name: "Thanh Nhã Ngân Hoa",
+    title: "Thanh Nhã Ngân Hoa - Bản Giao Hưởng Bạc Ý",
+    intro: "Nâng niu nét duyên trong từng ánh bạc. Lấy cảm hứng từ vẻ đẹp thanh tao của hoa nở trong ánh bạc, mong manh cùng cánh bướm nhẹ nhàng giữa khu vườn ngập nắng — Thanh Nhã Ngân Hoa là bản hòa ca của vẻ đẹp nữ tính, thanh tao và đầy duyên dáng. Mỗi món trang sức là một nét chấm phá tinh tế, tựa ánh bạc khẽ ngân trên cánh hoa, thì thầm về nét duyên thanh khiết luôn nở rộ theo năm tháng.",
+    banner: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=1200&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1617038260897-41a1f14a8ca0?auto=format&fit=crop&w=600&q=80",
+    isVisible: true
+  },
+  {
+    id: "pure-soul",
+    name: "Tâm Hồn Thuần Khiết",
+    title: "Pure Soul - Tâm Hồn Thuần Khiết",
+    intro: "Lấy cảm hứng từ vẻ đẹp thuần khiết và thanh tao của tâm hồn người phụ nữ, Pure Soul là lời tôn vinh sự dịu dàng, chân thành và tình yêu dành cho chính mình. Mỗi thiết kế mang những đường nét mềm mại cùng ánh sáng tinh tế của đá và bạc, tượng trưng cho vẻ đẹp xuất phát từ nội tâm — trong trẻo nhưng đầy cuốn hút. Pure Soul còn là lời nhắc rằng khi người phụ nữ biết yêu thương bản thân, họ sẽ luôn tỏa sáng theo cách riêng của mình.",
+    banner: "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=1200&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1602751584552-8ba73aad10e1?auto=format&fit=crop&w=600&q=80",
+    isVisible: true
+  }
+];
+
+export const defaultSlides: Slide[] = [
+  {
+    id: "slide-1",
+    title: "TRẢI NGHIỆM AI THỬ TRANG SỨC THẬT",
+    subtitle: "Sử dụng camera hoặc tải ảnh lên để xem chiếc vòng cổ lộng lẫy nhất trên bạn",
+    image: heroAr,
+    link: "/thu-vong-co",
+    sortOrder: 1
+  },
+  {
+    id: "slide-2",
+    title: "BỘ SƯU TẬP NÀNG THƠ THANH LỊCH",
+    subtitle: "Sức hút từ biểu tượng thiên swan - kiêu sa, thuần khiết và quý phái",
+    image: caraLunaBanner,
+    link: "/bo-suu-tap?collection=graceful-muse",
+    sortOrder: 2
+  },
+  {
+    id: "slide-3",
+    title: "DỊCH VỤ TRANG SỨC PREMIUM",
+    subtitle: "Gói quà trang nhã miễn phí, giao nhanh toàn quốc và bảo hành trọn đời",
+    image: tryonArBanner,
+    link: "/gioi-thieu",
+    sortOrder: 3
+  }
+];
+
+export let COLLECTIONS_DETAILS: Record<string, any> = {};
+export let COLLECTION_NAMES: Record<string, string> = {};
+
+export function updateGlobals(currentCollections: Collection[]) {
+  const details: Record<string, any> = {};
+  const names: Record<string, string> = {};
+  currentCollections.forEach((c) => {
+    names[c.id] = c.name;
+    if (c.isVisible) {
+      details[c.id] = {
+        id: c.id,
+        name: c.name,
+        title: c.title,
+        intro: c.intro,
+        banner: c.banner,
+        thumbnail: c.thumbnail,
+      };
+    }
+  });
+  COLLECTIONS_DETAILS = details;
+  COLLECTION_NAMES = names;
+}
+
+function load(): State {
+  if (typeof window === "undefined")
+    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [], collections: defaultCollections, slides: defaultSlides };
+
+  const seedManager: StoredAccount = {
+    id: "manager-seed",
+    fullName: "Luna Jewel Manager",
+    email: "manager@lunajewel.vn",
+    role: "MANAGER",
+    status: "ACTIVE",
+    passwordHash: simpleHash("ManagerPassword123"),
+  };
+
+  const seedAdmin: StoredAccount = {
+    id: "admin-seed",
+    fullName: "Luna Jewel Admin",
+    email: "admin@lunajewel.vn",
+    role: "ADMIN",
+    status: "ACTIVE",
+    passwordHash: simpleHash("AdminPassword123"),
+  };
+
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      updateGlobals(defaultCollections);
+      return {
+        cart: [],
+        wishlist: [],
+        currentUser: null,
+        accounts: [seedManager, seedAdmin],
+        reviews: defaultReviews,
+        products: [],
+        orders: [],
+        collections: defaultCollections,
+        slides: defaultSlides,
+      };
+    }
+    const parsed = JSON.parse(raw);
+    const loadedAccounts = Array.isArray(parsed.accounts) ? parsed.accounts : [];
+    if (!loadedAccounts.some((a: any) => a.email === "manager@lunajewel.vn")) {
+      loadedAccounts.push(seedManager);
+    }
+    if (!loadedAccounts.some((a: any) => a.email === "admin@lunajewel.vn")) {
+      loadedAccounts.push(seedAdmin);
+    }
+
+    const loadedCollections = Array.isArray(parsed.collections) && parsed.collections.length > 0
+      ? parsed.collections
+      : defaultCollections;
+
+    updateGlobals(loadedCollections);
+
+    const loadedSlides = Array.isArray(parsed.slides) && parsed.slides.length > 0
+      ? parsed.slides
+      : defaultSlides;
+
+    const currentUser = parsed.currentUser ?? null;
+    return {
+      cart: Array.isArray(parsed.cart) ? parsed.cart : [],
+      // Chỉ lấy wishlist từ LocalStorage nếu đã đăng nhập, chưa đăng nhập bắt buộc là rỗng
+      wishlist: currentUser && Array.isArray(parsed.wishlist) ? parsed.wishlist : [],
+      currentUser,
+      accounts: loadedAccounts,
+      reviews: Array.isArray(parsed.reviews) ? parsed.reviews : defaultReviews,
+      products: Array.isArray(parsed.products) ? parsed.products : [],
+      orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+      collections: loadedCollections,
+      slides: loadedSlides,
+      isProductsLoaded: false,
+    };
+  } catch {
+    updateGlobals(defaultCollections);
+    return {
+      cart: [],
+      wishlist: [],
+      currentUser: null,
+      accounts: [seedManager, seedAdmin],
+      reviews: defaultReviews,
+      products: [],
+      orders: [],
+      collections: defaultCollections,
+      slides: defaultSlides,
+      isProductsLoaded: false,
+    };
+  }
+}
+
+let state: State = load();
+
 const listeners = new Set<() => void>();
 
 function emit() {
   if (typeof window !== "undefined") {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
+  updateGlobals(state.collections);
   listeners.forEach((l) => l());
 }
 
@@ -202,7 +389,7 @@ function subscribe(fn: () => void) {
 
 const getSnapshot = () => state;
 const getServerSnapshot = () =>
-  ({ cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [] }) as State;
+  ({ cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [], collections: defaultCollections, slides: defaultSlides, isProductsLoaded: false }) as State;
 
 export function useStore() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -250,8 +437,50 @@ export const storeActions = {
     state = { ...state, cart: [] };
     emit();
   },
-  toggleWishlist(slug: string) {
+  async toggleWishlist(slug: string) {
+    state = load();
+    if (!state.currentUser) {
+      toast.error("Vui lòng đăng nhập", {
+        description: "Bạn cần đăng nhập tài khoản để lưu sản phẩm yêu thích!",
+      });
+      // Tự động chuyển hướng đến trang tài khoản
+      if (typeof window !== "undefined") {
+        window.location.hash = "/tai-khoan";
+      }
+      return;
+    }
+
     const has = state.wishlist.includes(slug);
+    
+    // Đồng bộ lên Cloud nếu đã cấu hình Supabase và user đã đăng nhập
+    if (isSupabaseConfigured()) {
+      try {
+        if (has) {
+          // Xóa khỏi Supabase
+          const { error: delErr } = await supabase
+            .from("wishlist")
+            .delete()
+            .eq("user_id", state.currentUser.id)
+            .eq("product_slug", slug);
+          if (delErr) throw delErr;
+          toast.success("Đã xóa khỏi danh sách yêu thích");
+        } else {
+          // Thêm vào Supabase
+          const { error: insErr } = await supabase
+            .from("wishlist")
+            .insert({
+              id: Date.now().toString(),
+              user_id: state.currentUser.id,
+              product_slug: slug,
+            });
+          if (insErr) throw insErr;
+          toast.success("Đã thêm vào danh sách yêu thích");
+        }
+      } catch (err: any) {
+        console.error("Supabase toggleWishlist error:", err);
+      }
+    }
+
     state = {
       ...state,
       wishlist: has
@@ -260,7 +489,26 @@ export const storeActions = {
     };
     emit();
   },
-  removeFromWishlist(slug: string) {
+
+  async removeFromWishlist(slug: string) {
+    state = load();
+    if (!state.currentUser) return;
+
+    // Đồng bộ lên Cloud nếu đã cấu hình Supabase và user đã đăng nhập
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: delErr } = await supabase
+          .from("wishlist")
+          .delete()
+          .eq("user_id", state.currentUser.id)
+          .eq("product_slug", slug);
+        if (delErr) throw delErr;
+        toast.success("Đã xóa khỏi danh sách yêu thích");
+      } catch (err: any) {
+        console.error("Supabase removeFromWishlist error:", err);
+      }
+    }
+
     state = {
       ...state,
       wishlist: state.wishlist.filter((s) => s !== slug),
@@ -268,8 +516,44 @@ export const storeActions = {
     emit();
   },
 
+  async fetchWishlist(): Promise<string[]> {
+    state = load();
+    if (!state.currentUser) {
+      state = { ...state, wishlist: [] };
+      emit();
+      return [];
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: cloudWishlist, error: fetchErr } = await supabase
+          .from("wishlist")
+          .select("product_slug")
+          .eq("user_id", state.currentUser.id);
+
+        if (fetchErr) throw fetchErr;
+
+        const mappedSlugs = cloudWishlist ? cloudWishlist.map((w: any) => w.product_slug) : [];
+        state = { ...state, wishlist: mappedSlugs };
+        emit();
+        return mappedSlugs;
+      } catch (err: any) {
+        console.error("Supabase fetchWishlist error:", err);
+        // Tuyệt đối không fallback lấy local wishlist cũ để tránh lẫn lộn
+        state = { ...state, wishlist: [] };
+        emit();
+        return [];
+      }
+    }
+    
+    // Nếu Supabase chưa được cấu hình
+    state = { ...state, wishlist: [] };
+    emit();
+    return [];
+  },
+
   // ── Review actions ─────────────────────────────────────────────
-  addReview(productSlug: string, rating: number, comment: string) {
+  async addReview(productSlug: string, rating: number, comment: string) {
     if (!state.currentUser) return;
     const newReview: ProductReview = {
       id: Date.now().toString(),
@@ -279,12 +563,116 @@ export const storeActions = {
       rating,
       comment,
       date: new Date().toLocaleDateString("vi-VN"),
+      isHidden: false, // UC29
     };
+
+    // Đồng bộ lên Cloud nếu đã cấu hình Supabase
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: insertErr } = await supabase.from("reviews").insert({
+          id: newReview.id,
+          product_slug: productSlug,
+          user_id: state.currentUser.id,
+          user_name: newReview.userName,
+          user_avatar: newReview.userAvatar || null,
+          rating,
+          comment,
+          date_string: newReview.date,
+          is_hidden: false, // UC29
+        });
+        if (insertErr) throw insertErr;
+        console.log(`Successfully added review for ${productSlug} on Supabase online!`);
+      } catch (err: any) {
+        console.error("Supabase addReview error:", err);
+      }
+    }
+
     state = {
       ...state,
       reviews: [newReview, ...state.reviews],
     };
     emit();
+  },
+
+  async fetchReviews(): Promise<ProductReview[]> {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: cloudReviews, error: fetchErr } = await supabase
+          .from("reviews")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (fetchErr) throw fetchErr;
+
+        if (cloudReviews) {
+          const mapped: ProductReview[] = cloudReviews.map((r: any) => ({
+            id: r.id,
+            productSlug: r.product_slug,
+            userName: r.user_name,
+            userAvatar: r.user_avatar || undefined,
+            rating: r.rating,
+            comment: r.comment,
+            date: r.date_string,
+            isHidden: r.is_hidden || false, // UC29
+          }));
+          state = { ...state, reviews: mapped };
+          emit();
+          return mapped;
+        }
+      } catch (err: any) {
+        console.error("Supabase fetchReviews error, using local reviews:", err);
+      }
+    }
+    return state.reviews;
+  },
+
+  async toggleReviewVisibility(reviewId: string, isHidden: boolean): Promise<{ ok: true } | { ok: false; error: string }> {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("reviews")
+          .update({ is_hidden: isHidden })
+          .eq("id", reviewId);
+        if (error) throw error;
+        console.log(`Successfully toggled review visibility to ${isHidden} for review ${reviewId} online!`);
+      } catch (err: any) {
+        console.error("Supabase toggleReviewVisibility error:", err);
+        return { ok: false, error: err.message };
+      }
+    }
+    state = {
+      ...state,
+      reviews: state.reviews.map((r) =>
+        String(r.id) === String(reviewId) ? { ...r, isHidden } : r
+      ),
+    };
+    emit();
+    return { ok: true };
+  },
+
+  async deleteReview(reviewId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase
+          .from("reviews")
+          .delete()
+          .eq("id", reviewId);
+        if (error) throw error;
+        console.log(`Successfully deleted review ${reviewId} online!`);
+      } catch (err: any) {
+        console.error("Supabase deleteReview error:", err);
+        return { ok: false, error: err.message };
+      }
+    }
+    state = {
+      ...state,
+      reviews: state.reviews.filter((r) => String(r.id) !== String(reviewId)),
+    };
+    emit();
+    return { ok: true };
   },
 
   // ── Auth actions ──────────────────────────────────────────────
@@ -477,12 +865,23 @@ export const storeActions = {
       currentUser: authUser,
     };
     emit();
+    
+    // Tự động đồng bộ hóa nạp lại danh sách yêu thích từ database ngay sau khi đăng nhập thành công để cập nhật icon tym
+    storeActions.fetchWishlist();
+    
     return { ok: true, user: authUser };
   },
 
   logout() {
-    state = { ...state, currentUser: null };
+    state = { ...state, currentUser: null, wishlist: [], cart: [] };
     emit();
+    if (typeof window !== "undefined") {
+      // Chuyển hướng về trang chủ và reload để làm sạch hoàn toàn bộ nhớ đệm session
+      window.location.href = "/";
+      setTimeout(() => {
+        window.location.reload();
+      }, 50);
+    }
   },
 
   updateProfile(data: Partial<Pick<AuthUser, "fullName" | "phone" | "avatar">>) {
@@ -657,6 +1056,10 @@ export const storeActions = {
       currentUser: authUser,
     };
     emit();
+    
+    // Tự động đồng bộ hóa nạp lại danh sách yêu thích từ database ngay sau khi đăng nhập Google thành công để cập nhật icon tym
+    storeActions.fetchWishlist();
+
     return { ok: true, user: authUser, isNew };
   },
 
@@ -940,6 +1343,12 @@ export const storeActions = {
   },
 
   triggerReRender() {
+    state = { ...state };
+    emit();
+  },
+
+  setProductsLoaded(val: boolean) {
+    state = { ...state, isProductsLoaded: val };
     emit();
   },
 
@@ -1032,4 +1441,408 @@ export const storeActions = {
     }
     return state.orders.filter(o => String(o.userId) === String(state.currentUser?.id));
   },
+
+  async cancelOrder(orderId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    state = load();
+    const order = state.orders.find(o => String(o.id) === String(orderId));
+    if (!order) return { ok: false, error: "Không tìm thấy đơn hàng" };
+    if (order.status !== "PENDING") {
+      return { ok: false, error: "Chỉ cho phép hủy đơn hàng khi ở trạng thái Chờ xử lý" };
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: updateErr } = await supabase
+          .from("orders")
+          .update({ status: "CANCELLED" })
+          .eq("id", orderId);
+        if (updateErr) throw updateErr;
+        console.log(`Successfully cancelled order ${orderId} on Supabase online!`);
+      } catch (err: any) {
+        console.error("Supabase cancelOrder error:", err);
+        return { ok: false, error: "Không thể cập nhật trạng thái đơn hàng trên Cloud Database." };
+      }
+    }
+
+    state = {
+      ...state,
+      orders: state.orders.map((o) =>
+        String(o.id) === String(orderId) ? { ...o, status: "CANCELLED" as const } : o
+      ),
+    };
+    emit();
+    return { ok: true };
+  },
+
+  async fetchAllOrders(): Promise<Order[]> {
+    state = load();
+    if (!state.currentUser || (state.currentUser.role !== "MANAGER" && state.currentUser.role !== "ADMIN")) {
+      return [];
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: cloudOrders, error: fetchErr } = await supabase
+          .from("orders")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (fetchErr) throw fetchErr;
+
+        if (cloudOrders) {
+          const mapped: Order[] = cloudOrders.map((o: any) => ({
+            id: o.id,
+            userId: o.user_id,
+            recipientName: o.recipient_name,
+            phone: o.phone,
+            address: o.address,
+            paymentMethod: o.payment_method,
+            items: o.items,
+            totalAmount: Number(o.total_amount),
+            status: o.status,
+            createdAt: o.created_at,
+          }));
+          state = { ...state, orders: mapped };
+          emit();
+          return mapped;
+        }
+      } catch (err: any) {
+        console.error("Supabase fetchAllOrders error:", err);
+      }
+    }
+    return state.orders;
+  },
+
+  async updateOrderStatus(orderId: string, status: Order["status"]): Promise<{ ok: true } | { ok: false; error: string }> {
+    state = load();
+    const order = state.orders.find(o => String(o.id) === String(orderId));
+    if (!order) return { ok: false, error: "Không tìm thấy đơn hàng" };
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: updateErr } = await supabase
+          .from("orders")
+          .update({ status })
+          .eq("id", orderId);
+        if (updateErr) throw updateErr;
+        console.log(`Successfully updated order ${orderId} to status ${status} on Supabase online!`);
+      } catch (err: any) {
+        console.error("Supabase updateOrderStatus error:", err);
+        return { ok: false, error: "Không thể cập nhật trạng thái đơn hàng trên Cloud Database." };
+      }
+    }
+
+    state = {
+      ...state,
+      orders: state.orders.map((o) =>
+        String(o.id) === String(orderId) ? { ...o, status } : o
+      ),
+    };
+    emit();
+    return { ok: true };
+  },
+
+  async fetchAllAccounts(): Promise<AuthUser[]> {
+    state = load();
+    if (!state.currentUser || (state.currentUser.role !== "MANAGER" && state.currentUser.role !== "ADMIN")) {
+      return [];
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: cloudUsers, error: fetchErr } = await supabase
+          .from("users")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (fetchErr) throw fetchErr;
+
+        if (cloudUsers) {
+          const mapped: StoredAccount[] = cloudUsers.map((u: any) => ({
+            id: u.id,
+            email: u.email,
+            passwordHash: u.password_hash || "",
+            googleId: u.google_id || undefined,
+            fullName: u.full_name,
+            phone: u.phone || undefined,
+            avatar: u.avatar_url || undefined,
+            role: u.role || "USER",
+            status: u.status || "ACTIVE",
+            addresses: [],
+          }));
+
+          const { data: cloudAddrs, error: addrErr } = await supabase
+            .from("addresses")
+            .select("*");
+          
+          if (!addrErr && cloudAddrs) {
+            mapped.forEach((acc) => {
+              acc.addresses = cloudAddrs
+                .filter((a: any) => String(a.user_id) === String(acc.id))
+                .map((a: any) => ({
+                  id: a.id,
+                  recipientName: a.recipient_name,
+                  phone: a.phone,
+                  province: a.province,
+                  district: a.district,
+                  ward: a.ward,
+                  street: a.street,
+                  isDefault: a.is_default,
+                }));
+            });
+          }
+
+          state = { ...state, accounts: mapped };
+          emit();
+          return mapped;
+        }
+      } catch (err: any) {
+        console.error("Supabase fetchAllAccounts error:", err);
+      }
+    }
+    return state.accounts;
+  },
+
+  async toggleAccountLockStatus(accountId: string): Promise<{ ok: true } | { ok: false; error: string }> {
+    state = load();
+    if (!state.currentUser) return { ok: false, error: "Bạn chưa đăng nhập." };
+    if (state.currentUser.role !== "ADMIN") {
+      return { ok: false, error: "Chỉ quản trị viên mới có quyền thực hiện thao tác này." };
+    }
+    if (String(state.currentUser.id) === String(accountId)) {
+      return { ok: false, error: "Bạn không thể tự khóa tài khoản của chính mình." };
+    }
+
+    const targetAccount = state.accounts.find((a) => String(a.id) === String(accountId));
+    if (!targetAccount) return { ok: false, error: "Không tìm thấy tài khoản hệ thống." };
+
+    const newStatus = targetAccount.status === "ACTIVE" ? "LOCKED" : "ACTIVE";
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: updateErr } = await supabase
+          .from("users")
+          .update({ status: newStatus })
+          .eq("id", accountId);
+        if (updateErr) throw updateErr;
+      } catch (err: any) {
+        console.error("Supabase toggleAccountLockStatus error:", err);
+        return { ok: false, error: "Không thể cập nhật trạng thái tài khoản trên Cloud Database." };
+      }
+    }
+
+    state = {
+      ...state,
+      accounts: state.accounts.map((a) =>
+        String(a.id) === String(accountId) ? { ...a, status: newStatus } : a
+      ),
+    };
+    emit();
+    return { ok: true };
+  },
+
+  async changeAccountRole(accountId: string, role: UserRole): Promise<{ ok: true } | { ok: false; error: string }> {
+    state = load();
+    if (!state.currentUser) return { ok: false, error: "Bạn chưa đăng nhập." };
+    if (state.currentUser.role !== "ADMIN") {
+      return { ok: false, error: "Chỉ quản trị viên mới có quyền thực hiện thao tác này." };
+    }
+    if (String(state.currentUser.id) === String(accountId)) {
+      return { ok: false, error: "Bạn không thể tự thay đổi quyền hạn của chính mình." };
+    }
+    if (role !== "USER" && role !== "MANAGER" && role !== "ADMIN") {
+      return { ok: false, error: "Vai trò hệ thống không hợp lệ." };
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error: updateErr } = await supabase
+          .from("users")
+          .update({ role })
+          .eq("id", accountId);
+        if (updateErr) throw updateErr;
+      } catch (err: any) {
+        console.error("Supabase changeAccountRole error:", err);
+        return { ok: false, error: "Không thể cập nhật quyền hạn tài khoản trên Cloud Database." };
+      }
+    }
+
+    state = {
+      ...state,
+      accounts: state.accounts.map((a) =>
+        String(a.id) === String(accountId) ? { ...a, role } : a
+      ),
+    };
+    emit();
+    return { ok: true };
+  },
+
+  async saveCollection(col: Collection) {
+    state = load();
+    const exists = state.collections.some((c) => c.id === col.id);
+    let updated: Collection[];
+    if (exists) {
+      updated = state.collections.map((c) => (c.id === col.id ? col : c));
+    } else {
+      updated = [...state.collections, col];
+    }
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from("collections").upsert({
+          id: col.id,
+          name: col.name,
+          title: col.title,
+          intro: col.intro,
+          banner: col.banner,
+          thumbnail: col.thumbnail,
+          is_visible: col.isVisible,
+        });
+        if (error) console.error("Supabase saveCollection error:", error);
+      } catch (err) {
+        console.error("Supabase sync collection failed:", err);
+      }
+    }
+
+    state = { ...state, collections: updated };
+    emit();
+  },
+
+  async deleteCollection(id: string) {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from("collections").delete().eq("id", id);
+        if (error) console.error("Supabase deleteCollection error:", error);
+      } catch (err) {
+        console.error("Supabase delete collection failed:", err);
+      }
+    }
+    state = {
+      ...state,
+      collections: state.collections.filter((c) => c.id !== id),
+    };
+    emit();
+  },
+
+  async fetchCollections(): Promise<Collection[]> {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from("collections")
+          .select("*")
+          .order("created_at", { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const mapped: Collection[] = data.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            title: c.title,
+            intro: c.intro,
+            banner: c.banner,
+            thumbnail: c.thumbnail,
+            isVisible: c.is_visible,
+          }));
+          state = { ...state, collections: mapped };
+          emit();
+          return mapped;
+        }
+      } catch (e) {
+        console.error("Supabase fetchCollections error:", e);
+      }
+    }
+    return state.collections;
+  },
+
+  async saveSlide(slide: Slide) {
+    state = load();
+    const exists = state.slides.some((s) => s.id === slide.id);
+    let updated: Slide[];
+    if (exists) {
+      updated = state.slides.map((s) => (s.id === slide.id ? slide : s));
+    } else {
+      updated = [...state.slides, slide];
+    }
+    updated.sort((a, b) => a.sortOrder - b.sortOrder);
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from("slides").upsert({
+          id: slide.id,
+          title: slide.title || null,
+          subtitle: slide.subtitle || null,
+          image: slide.image,
+          link: slide.link || null,
+          sort_order: slide.sortOrder,
+        });
+        if (error) console.error("Supabase saveSlide error:", error);
+      } catch (err) {
+        console.error("Supabase sync slide failed:", err);
+      }
+    }
+
+    state = { ...state, slides: updated };
+    emit();
+  },
+
+  async deleteSlide(id: string) {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from("slides").delete().eq("id", id);
+        if (error) console.error("Supabase deleteSlide error:", error);
+      } catch (err) {
+        console.error("Supabase delete slide failed:", err);
+      }
+    }
+    state = {
+      ...state,
+      slides: state.slides.filter((s) => s.id !== id),
+    };
+    emit();
+  },
+
+  async fetchSlides(): Promise<Slide[]> {
+    state = load();
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from("slides")
+          .select("*")
+          .order("sort_order", { ascending: true });
+
+        if (!error && data && data.length > 0) {
+          const mapped: Slide[] = data.map((s: any) => ({
+            id: s.id,
+            title: s.title || undefined,
+            subtitle: s.subtitle || undefined,
+            image: s.image,
+            link: s.link || undefined,
+            sortOrder: s.sort_order || 0,
+          }));
+          state = { ...state, slides: mapped };
+          emit();
+          return mapped;
+        }
+      } catch (e) {
+        console.error("Supabase fetchSlides error:", e);
+      }
+    }
+    return state.slides;
+  },
 };
+
+if (typeof window !== "undefined") {
+  setTimeout(() => {
+    storeActions.fetchCollections();
+    storeActions.fetchSlides();
+    const user = load().currentUser;
+    if (user && (user.role === "MANAGER" || user.role === "ADMIN")) {
+      storeActions.fetchAllOrders();
+      storeActions.fetchAllAccounts();
+    } else if (user) {
+      storeActions.fetchOrders();
+    }
+  }, 150);
+}

@@ -4,6 +4,7 @@ import { Plus, Minus, X, Heart, ChevronLeft, ChevronRight } from "lucide-react";
 import { TopBar, NavBar, ProductCard, Footer } from "@/components/SiteChrome";
 import { getProduct, products } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
+import { formatProductPrice } from "@/lib/utils";
 
 type CartSearch = { slug?: string; qty?: number; size?: string };
 
@@ -22,11 +23,12 @@ export const Route = createFileRoute("/gio-hang")({
   component: CartPage,
 });
 
-function parsePrice(p: string) {
-  return parseInt(p.replace(/[^\d]/g, ""), 10) || 0;
+function parsePrice(p: any) {
+  if (typeof p === "number") return p;
+  return parseInt(String(p || "").replace(/[^\d]/g, ""), 10) || 0;
 }
 function formatPrice(n: number) {
-  return n.toLocaleString("vi-VN") + "VNĐ";
+  return formatProductPrice(n);
 }
 
 function CartPage() {

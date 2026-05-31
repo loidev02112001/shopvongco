@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,11 +24,16 @@ import {
   Cloud,
   CloudOff,
   X,
+  Search,
+  Sparkles,
+  ArrowRightLeft,
 } from "lucide-react";
 import { TopBar, NavBar, Footer } from "@/components/SiteChrome";
 import { storeActions, useStore } from "@/lib/store";
-import { isSupabaseConfigured } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { products } from "@/data/products";
+import { formatProductPrice } from "@/lib/utils";
 
 const PROVINCES: Record<string, string[]> = {
   "Hà Nội": ["Ba Đình", "Hoàn Kiếm", "Cầu Giấy", "Đống Đa", "Thạch Thất"],
@@ -398,7 +403,14 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="space-y-5"
+      noValidate
+      onChange={() => {
+        if (loginError) setLoginError(null);
+      }}
+    >
 
       {/* ── Inline Error Banner ─────────────────────────────────────── */}
       {loginError && (
@@ -444,7 +456,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             type="email"
             placeholder="example@email.com"
             autoComplete="email"
-            onChange={() => setLoginError(null)}
             className={`w-full pl-10 pr-4 py-3 border rounded-lg text-sm outline-none transition-all
               ${
                 errors.email || loginError === "invalid_credentials"
@@ -465,7 +476,6 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
             type={showPw ? "text" : "password"}
             placeholder="Mật khẩu của bạn"
             autoComplete="current-password"
-            onChange={() => setLoginError(null)}
             className={`w-full pl-10 pr-11 py-3 border rounded-lg text-sm outline-none transition-all
               ${
                 errors.password || loginError === "invalid_credentials"
@@ -540,8 +550,8 @@ function ProfilePanel() {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Sub-tab: profile vs addresses vs password
-  const [activeSubTab, setActiveSubTab] = useState<"profile" | "addresses" | "password">("profile");
+  // Sub-tab: profile vs addresses vs password vs products-admin
+  const [activeSubTab, setActiveSubTab] = useState<"profile" | "addresses" | "password" | "products-admin">("profile");
 
   // States cho đổi mật khẩu (UC12)
   const [passwordForm, setPasswordForm] = useState({
@@ -1713,6 +1723,716 @@ function AccountPage() {
       </section>
 
       <Footer />
+    </div>
+  );
+}
+
+// ── Product Admin Panel Component (UC22) ───────────────────────────────────
+
+const COLLECTION_NAMES: Record<string, string> = {
+  "huong-sac-mua-he": "Hương Sắc Mùa Hè",
+  "graceful-muse": "Graceful Muse",
+  "thanh-nha-ngan-hoa": "Thanh Nhã Ngân Hoa",
+  "pure-soul": "Pure Soul",
+};
+
+const DEFAULT_DESCRIPTION =
+  "1. Thông tin sản phẩm.\nChất liệu: Bạc 925 an toàn cho da, 100% không gỉ và bền.\nSản phẩm được tặng kèm hộp đựng và nước rửa bạc chuyên dụng.\nHướng dẫn bảo quản: tránh tiếp xúc hóa chất, chất tẩy rửa mạnh.\nLưu ý khi sử dụng: Tránh va đập, sử dụng nhẹ nhàng tránh vướng mắc vào quần áo.\n\n2. Hướng dẫn sử dụng sản phẩm.\nHãy tháo trang sức lúc chơi thể thao, tắm biển, bơi,... để tránh bạc xước và xỉn màu.\nLưu ý khi sử dụng mỹ phẩm thì các chất hóa học có thể làm phai màu bạc.\n\n3. Luna Jewel cam kết.\nSản phẩm 100% giống mô tả.\nĐảm bảo chất lượng và chất liệu bạc 100%.\nSản phẩm được kiểm tra cẩn thận, kỹ càng trước khi giao cho Quý khách.\nGiao hàng toàn quốc, thanh toán khi nhận hàng.";
+
+function ProductAdminPanel() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<any | null>(null);
+
+  // Form states
+  const [slug, setSlug] = useState("");
+  const [name, setName] = useState("");
+  const [shortName, setShortName] = useState("");
+  const [price, setPrice] = useState("");
+  const [collectionId, setCollectionId] = useState("");
+  const [img, setImg] = useState("");
+  const [images, setImages] = useState<string[]>([]);
+  const [newSubImageUrl, setNewSubImageUrl] = useState("");
+  const [description, setDescription] = useState(DEFAULT_DESCRIPTION);
+  const [info, setInfo] = useState("");
+  const [specs, setSpecs] = useState({
+    "Kiểu dáng": "Dây chuyền tinh xảo",
+    "Chất liệu": "Bạc Ý 925 cao cấp",
+    "Màu sắc": "Bạc sáng",
+    "Độ dài dây": "40cm + 5cm",
+    "Kích thước": "Mặt dây 1.2cm",
+    "Cách bảo quản & chăm sóc": "Tránh hóa chất, lau khô sau khi dùng.",
+  });
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const subFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Trigger state re-renders locally
+  const [, setLocalTick] = useState(0);
+
+  const filteredProducts = products.filter(
+    (p) =>
+      p &&
+      ((p.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (p.slug || "").toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const resetForm = () => {
+    setSlug("");
+    setName("");
+    setShortName("");
+    setPrice("");
+    setCollectionId("");
+    setImg("");
+    setImages([]);
+    setNewSubImageUrl("");
+    setDescription(DEFAULT_DESCRIPTION);
+    setInfo("");
+    setSpecs({
+      "Kiểu dáng": "Dây chuyền tinh xảo",
+      "Chất liệu": "Bạc Ý 925 cao cấp",
+      "Màu sắc": "Bạc sáng",
+      "Độ dài dây": "40cm + 5cm",
+      "Kích thước": "Mặt dây 1.2cm",
+      "Cách bảo quản & chăm sóc": "Tránh hóa chất, lau khô sau khi dùng.",
+    });
+    setFormErrors({});
+    setEditingProduct(null);
+  };
+
+  const handleOpenAdd = () => {
+    resetForm();
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (p: any) => {
+    setEditingProduct(p);
+    setSlug(p.slug);
+    setName(p.name);
+    setShortName(p.shortName);
+    setPrice(p.price);
+    setCollectionId(p.collectionId || "");
+    setImg(p.img || "");
+    setImages(p.images || []);
+    setDescription(p.description || DEFAULT_DESCRIPTION);
+    setInfo(p.info || "");
+    setSpecs({
+      "Kiểu dáng": p.specs?.["Kiểu dáng"] || "Dây chuyền tinh xảo",
+      "Chất liệu": p.specs?.["Chất liệu"] || "Bạc Ý 925 cao cấp",
+      "Màu sắc": p.specs?.["Màu sắc"] || "Bạc sáng",
+      "Độ dài dây": p.specs?.["Độ dài dây"] || "40cm + 5cm",
+      "Kích thước": p.specs?.["Kích thước"] || "Mặt dây 1.2cm",
+      "Cách bảo quản & chăm sóc": p.specs?.["Cách bảo quản & chăm sóc"] || "Tránh hóa chất, lau khô sau khi dùng.",
+    });
+    setFormErrors({});
+    setIsModalOpen(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn tệp hình ảnh hợp lệ!");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Kích thước ảnh không được lớn hơn 2MB!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setImg(dataUrl);
+      toast.success("Tải ảnh lên thành công! 📸");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleSubImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Vui lòng chọn tệp hình ảnh hợp lệ!");
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Kích thước ảnh không được lớn hơn 2MB!");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setImages((prev) => [...prev, dataUrl]);
+      toast.success("Tải ảnh phụ lên thành công! 📸");
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddSubImageUrl = () => {
+    if (!newSubImageUrl.trim()) return;
+    setImages((prev) => [...prev, newSubImageUrl.trim()]);
+    setNewSubImageUrl("");
+    toast.success("Đã thêm URL ảnh phụ! 🔗");
+  };
+
+  const handleRemoveSubImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+    toast.success("Đã xóa ảnh phụ!");
+  };
+
+  const handleDelete = async (targetSlug: string) => {
+    if (!confirm(`Bạn có chắc chắn muốn xóa sản phẩm "${targetSlug}" khỏi hệ thống?`)) return;
+
+    try {
+      if (isSupabaseConfigured()) {
+        const { error } = await supabase
+          .from("products")
+          .delete()
+          .eq("slug", targetSlug);
+        if (error) throw error;
+      }
+
+      // Xóa khỏi local products array in-place
+      const idx = products.findIndex((p) => p.slug === targetSlug);
+      if (idx !== -1) {
+        products.splice(idx, 1);
+      }
+
+      storeActions.triggerReRender();
+      setLocalTick((t) => t + 1);
+      toast.success("Đã xóa sản phẩm thành công!");
+    } catch (err: any) {
+      console.error("Lỗi khi xóa sản phẩm:", err);
+      toast.error("Không thể xóa sản phẩm. Vui lòng thử lại!");
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const errors: Record<string, string> = {};
+
+    if (!slug.trim()) {
+      errors.slug = "Slug không được để trống";
+    } else if (!/^[a-z0-9-]+$/.test(slug)) {
+      errors.slug = "Slug chỉ được chứa chữ thường, số và dấu gạch ngang";
+    } else if (!editingProduct && products.some((p) => p.slug === slug)) {
+      errors.slug = "Slug này đã tồn tại ở một sản phẩm khác";
+    }
+
+    if (!name.trim()) errors.name = "Tên sản phẩm không được để trống";
+    if (!shortName.trim()) errors.shortName = "Tên hiển thị ngắn không được để trống";
+    if (!price.trim()) errors.price = "Giá sản phẩm không được để trống";
+    if (!img.trim()) errors.img = "Cần chọn ảnh sản phẩm hoặc dán URL ảnh";
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const collectionVal = collectionId || null;
+      const productPayload = {
+        slug: slug.trim(),
+        img: img.trim(),
+        name: name.trim(),
+        shortName: shortName.trim(),
+        price: price.trim(),
+        description: description.trim(),
+        specs,
+        info: info.trim() || `THÔNG TIN ${name.toUpperCase()}`,
+        collectionId: collectionVal || undefined,
+        images: images,
+      };
+
+      if (isSupabaseConfigured()) {
+        const dbPayload = {
+          slug: productPayload.slug,
+          img: productPayload.img,
+          name: productPayload.name,
+          short_name: productPayload.shortName,
+          price: parseInt(String(productPayload.price).replace(/[^\d]/g, ""), 10) || 0,
+          description: productPayload.description,
+          specs: productPayload.specs,
+          info: productPayload.info,
+          collection_id: collectionVal,
+          images: images,
+        };
+
+        const { error } = await supabase.from("products").upsert(dbPayload);
+        if (error) throw error;
+      }
+
+      // Đột biến in-place mảng products cục bộ
+      if (editingProduct) {
+        const idx = products.findIndex((p) => p.slug === editingProduct.slug);
+        if (idx !== -1) {
+          products[idx] = productPayload;
+        }
+      } else {
+        products.unshift(productPayload);
+      }
+
+      storeActions.triggerReRender();
+      setLocalTick((t) => t + 1);
+      toast.success(editingProduct ? "Đã cập nhật sản phẩm thành công! 🎉" : "Đã thêm sản phẩm mới thành công! 🎉");
+      setIsModalOpen(false);
+      resetForm();
+    } catch (err: any) {
+      console.error("Lỗi khi lưu sản phẩm:", err);
+      if (err?.code === "PGRST204" || (err?.message && err.message.includes("images"))) {
+        toast.error("Thiếu cột 'images' trên cơ sở dữ liệu Supabase online!", {
+          description: "Vui lòng vào Supabase Dashboard -> SQL Editor và chạy lệnh: ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;",
+          duration: 10000,
+        });
+      } else {
+        toast.error("Đã xảy ra lỗi khi lưu sản phẩm. Vui lòng thử lại!");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 pt-2 animate-fadeIn">
+      {/* Panel Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h3 className="text-xs font-bold text-brand uppercase tracking-widest">
+          Bảng Quản Lý Sản Phẩm ({filteredProducts.length})
+        </h3>
+        <button
+          onClick={handleOpenAdd}
+          className="text-xs font-bold text-brand flex items-center justify-center gap-1.5 bg-brand-soft/70 px-4 py-2.5 rounded-lg border border-brand/10 hover:bg-brand hover:text-brand-foreground transition-all duration-200 active:scale-95 shadow-2xs cursor-pointer"
+        >
+          <Plus className="w-4 h-4" /> Thêm sản phẩm mới
+        </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand/60" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Tìm kiếm sản phẩm theo tên hoặc slug..."
+          className="w-full pl-10 pr-4 py-3 border border-border rounded-lg text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/20 transition-all"
+        />
+      </div>
+
+      {/* Products Table / Grid */}
+      {filteredProducts.length === 0 ? (
+        <div className="text-center py-12 border border-dashed border-border rounded-xl">
+          <Search className="w-8 h-8 text-muted-foreground/45 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-muted-foreground">Không tìm thấy sản phẩm nào</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">Hãy thử tìm kiếm với từ khóa khác.</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto border border-border rounded-xl bg-white shadow-2xs">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-muted/40 border-b border-border text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                <th className="p-4 w-16">Hình</th>
+                <th className="p-4">Tên sản phẩm & Slug</th>
+                <th className="p-4 w-28 text-right">Giá tiền</th>
+                <th className="p-4 w-40">Bộ sưu tập</th>
+                <th className="p-4 w-24 text-center">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border text-sm">
+              {filteredProducts.map((p) => {
+                const collectionName = p.collectionId ? COLLECTION_NAMES[p.collectionId] || p.collectionId : "Không có";
+                return (
+                  <tr key={p.slug} className="hover:bg-muted/15 transition-colors">
+                    <td className="p-4">
+                      <div className="w-10 h-10 rounded-md overflow-hidden border border-border bg-muted shrink-0">
+                        <img
+                          src={p.img}
+                          alt={p.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src =
+                              "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=100&q=80";
+                          }}
+                        />
+                      </div>
+                    </td>
+                    <td className="p-4 min-w-[200px]">
+                      <div className="font-semibold text-foreground line-clamp-1">{p.name}</div>
+                      <div className="text-xs text-muted-foreground font-mono mt-0.5">{p.slug}</div>
+                    </td>
+                    <td className="p-4 text-right font-bold text-brand">
+                      {formatProductPrice(p.price)}
+                    </td>
+                    <td className="p-4">
+                      {p.collectionId ? (
+                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-brand-soft text-brand px-2 py-0.5 rounded-full">
+                          {collectionName}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-muted-foreground italic">Chưa gán</span>
+                      )}
+                    </td>
+                    <td className="p-4">
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => handleOpenEdit(p)}
+                          className="p-2 text-brand hover:bg-brand-soft/60 rounded-lg transition-colors cursor-pointer"
+                          title="Sửa sản phẩm"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(p.slug)}
+                          className="p-2 text-destructive hover:bg-destructive/10 rounded-lg transition-colors cursor-pointer"
+                          title="Xóa sản phẩm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Modern Overlay Modal Form (UC22 + UC23) */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="relative bg-white w-full max-w-2xl rounded-2xl shadow-xl border border-border flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h3 className="font-display font-bold text-brand text-base md:text-lg">
+                {editingProduct ? `Chỉnh Sửa Sản Phẩm: ${editingProduct.slug}` : "Thêm Sản Phẩm Mới"}
+              </h3>
+              <button
+                onClick={() => setIsModalOpen(false)}
+                className="p-1.5 hover:bg-muted rounded-full transition-colors text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Scrollable Body */}
+            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
+              
+              {/* Slug + Collection Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Slug */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                    Định danh (Slug) *
+                  </label>
+                  <input
+                    type="text"
+                    value={slug}
+                    disabled={!!editingProduct}
+                    onChange={(e) => setSlug(e.target.value)}
+                    placeholder="vi-du-vong-co-bac"
+                    className={`w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none transition-all ${
+                      editingProduct
+                        ? "bg-muted text-muted-foreground border-border cursor-not-allowed"
+                        : formErrors.slug
+                        ? "border-destructive bg-destructive/5 focus:border-destructive"
+                        : "border-border focus:border-brand"
+                    }`}
+                  />
+                  {formErrors.slug && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{formErrors.slug}</p>
+                  )}
+                  {!editingProduct && (
+                    <p className="text-[10px] text-muted-foreground mt-0.5">
+                      Nhập slug dạng chữ thường không dấu, nối bằng dấu gạch ngang. Ví dụ: <code>vong-co-luxury-clover</code>. Sau khi tạo sẽ không thể chỉnh sửa slug.
+                    </p>
+                  )}
+                </div>
+
+                {/* Collection */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                    Bộ sưu tập
+                  </label>
+                  <select
+                    value={collectionId}
+                    onChange={(e) => setCollectionId(e.target.value)}
+                    className="w-full bg-white border border-border rounded-lg px-3 py-2.5 text-sm outline-none focus:border-brand"
+                  >
+                    <option value="">Không gán bộ sưu tập</option>
+                    {Object.entries(COLLECTION_NAMES).map(([id, label]) => (
+                      <option key={id} value={id}>
+                        {label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Tên sản phẩm + Tên ngắn gọn Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Full name */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                    Tên đầy đủ sản phẩm *
+                  </label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Dây chuyền Bạc 925 Royal Heart"
+                    className={`w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none transition-all ${
+                      formErrors.name ? "border-destructive bg-destructive/5" : "border-border focus:border-brand"
+                    }`}
+                  />
+                  {formErrors.name && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{formErrors.name}</p>
+                  )}
+                </div>
+
+                {/* Short name */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                    Tên hiển thị ngắn *
+                  </label>
+                  <input
+                    type="text"
+                    value={shortName}
+                    onChange={(e) => setShortName(e.target.value)}
+                    placeholder="DÂY CHUYỀN BẠC 925 ROYAL HEART - VCB116"
+                    className={`w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none transition-all ${
+                      formErrors.shortName ? "border-destructive bg-destructive/5" : "border-border focus:border-brand"
+                    }`}
+                  />
+                  {formErrors.shortName && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{formErrors.shortName}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Giá cả + Ảnh sản phẩm Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Price */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                    Giá sản phẩm *
+                  </label>
+                  <input
+                    type="text"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="520.000VNĐ"
+                    className={`w-full px-3.5 py-2.5 border rounded-lg text-sm outline-none transition-all ${
+                      formErrors.price ? "border-destructive bg-destructive/5" : "border-border focus:border-brand"
+                    }`}
+                  />
+                  {formErrors.price && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{formErrors.price}</p>
+                  )}
+                </div>
+
+                {/* Image Field */}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                    Hình ảnh sản phẩm *
+                  </label>
+                  <div className="flex gap-2.5">
+                    <input
+                      type="text"
+                      value={img}
+                      onChange={(e) => setImg(e.target.value)}
+                      placeholder="Dán URL hình ảnh hoặc bấm tải lên..."
+                      className={`flex-1 px-3.5 py-2.5 border rounded-lg text-xs outline-none transition-all truncate ${
+                        formErrors.img ? "border-destructive bg-destructive/5" : "border-border focus:border-brand"
+                      }`}
+                    />
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      onChange={handleImageUpload}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="px-4 py-2.5 bg-brand-soft border border-brand/20 text-brand rounded-lg text-xs font-bold whitespace-nowrap hover:bg-brand hover:text-brand-foreground transition-all duration-200 cursor-pointer"
+                    >
+                      Tải ảnh lên
+                    </button>
+                  </div>
+                  {formErrors.img && (
+                    <p className="text-xs text-destructive mt-1 font-medium">{formErrors.img}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Images Field */}
+              <div className="space-y-2.5 border border-dashed border-brand/20 p-4 rounded-xl bg-brand-soft/5">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-brand block">
+                  Các hình ảnh phụ / Chi tiết sản phẩm ({images.length})
+                </label>
+                <div className="flex gap-2.5">
+                  <input
+                    type="text"
+                    value={newSubImageUrl}
+                    onChange={(e) => setNewSubImageUrl(e.target.value)}
+                    placeholder="Dán URL hình ảnh phụ..."
+                    className="flex-1 px-3.5 py-2.5 border border-border rounded-lg text-xs outline-none focus:border-brand bg-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddSubImageUrl}
+                    className="px-3.5 py-2 bg-brand/10 text-brand rounded-lg text-xs font-bold hover:bg-brand hover:text-brand-foreground transition-all duration-200 cursor-pointer"
+                  >
+                    Thêm URL
+                  </button>
+                  <input
+                    type="file"
+                    ref={subFileInputRef}
+                    onChange={handleSubImageUpload}
+                    accept="image/*"
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => subFileInputRef.current?.click()}
+                    className="px-3.5 py-2 bg-brand-soft border border-brand/20 text-brand rounded-lg text-xs font-bold hover:bg-brand hover:text-brand-foreground transition-all duration-200 cursor-pointer"
+                  >
+                    Tải ảnh phụ
+                  </button>
+                </div>
+                
+                {/* Thumbnails of additional images */}
+                {images.length > 0 && (
+                  <div className="grid grid-cols-5 gap-2 mt-2">
+                    {images.map((url, i) => (
+                      <div key={i} className="relative aspect-square rounded-lg overflow-hidden border border-border group bg-white shadow-2xs">
+                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveSubImage(i)}
+                          className="absolute -top-1 -right-1 bg-destructive text-white p-1 rounded-full hover:scale-115 active:scale-90 transition-transform shadow-md cursor-pointer"
+                          title="Xóa ảnh phụ"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Image Preview & Info Header */}
+              {img && (
+                <div className="flex items-center gap-3.5 p-3.5 bg-muted/30 border border-border rounded-xl">
+                  <div className="w-14 h-14 rounded-md overflow-hidden bg-white border border-border shrink-0">
+                    <img
+                      src={img}
+                      alt="Preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src =
+                          "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=100&q=80";
+                      }}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-[9px] font-bold text-brand uppercase tracking-wider">Xem trước hình ảnh</div>
+                    <div className="text-xs text-muted-foreground truncate max-w-[400px] mt-0.5">{img}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Info Header Title */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                  Tiêu đề thông tin sản phẩm (Info Title)
+                </label>
+                <input
+                  type="text"
+                  value={info}
+                  onChange={(e) => setInfo(e.target.value)}
+                  placeholder="THÔNG TIN DÂY CHUYỀN BẠC 925 ROYAL HEART"
+                  className="w-full px-3.5 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-brand"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase tracking-wider text-foreground/60 block">
+                  Mô tả sản phẩm (Chi tiết & Hướng dẫn sử dụng)
+                </label>
+                <textarea
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Mô tả chi tiết sản phẩm..."
+                  rows={6}
+                  className="w-full px-3.5 py-2.5 border border-border rounded-lg text-sm outline-none focus:border-brand resize-none font-sans leading-relaxed"
+                />
+              </div>
+
+              {/* Specs Fields */}
+              <div className="border-t border-border pt-4">
+                <h4 className="text-xs font-bold text-brand uppercase tracking-widest mb-3.5">
+                  Thông Số Thiết Kế & Specs
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.keys(specs).map((key) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-[9px] font-bold uppercase tracking-wider text-foreground/60 block">
+                        {key}
+                      </label>
+                      <input
+                        type="text"
+                        value={specs[key as keyof typeof specs]}
+                        onChange={(e) =>
+                          setSpecs({
+                            ...specs,
+                            [key]: e.target.value,
+                          })
+                        }
+                        placeholder={`Nhập ${key.toLowerCase()}...`}
+                        className="w-full px-3.5 py-2.5 border border-border rounded-lg text-xs outline-none focus:border-brand"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form Buttons */}
+              <div className="flex items-center gap-3 pt-4 border-t border-border">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-brand text-brand-foreground py-3 rounded-lg text-xs font-bold uppercase tracking-widest hover:brightness-105 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer shadow-sm shadow-brand/10"
+                >
+                  {isSubmitting ? (
+                    <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    "Lưu Sản Phẩm"
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="flex-1 border border-brand/20 text-brand bg-white py-3 rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-brand-soft transition active:scale-[0.98] cursor-pointer"
+                >
+                  Hủy Bỏ
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

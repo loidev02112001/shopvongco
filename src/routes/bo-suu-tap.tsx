@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, SlidersHorizontal, X, Search as SearchIcon, AlertCircle, ArrowLeft } from "lucide-react";
-import { TopBar, NavBar, ProductCard, Footer } from "@/components/SiteChrome";
+import { TopBar, NavBar, ProductCard, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
 import { products as baseProducts, type Product } from "@/data/products";
 import collection1 from "@/assets/collection-1.png";
 import collection2 from "@/assets/collection-2.png";
@@ -20,45 +20,7 @@ type Search = {
   priceRange?: string;
 };
 
-// Cấu hình chi tiết từng Collection bao gồm banner riêng, tiêu đề lãng mạn và description (UC34)
-type CollectionDetail = {
-  id: string;
-  name: string;
-  title: string;
-  intro: string;
-  banner: string;
-};
-
-const COLLECTIONS_DETAILS: Record<string, CollectionDetail> = {
-  "graceful-muse": {
-    id: "graceful-muse",
-    name: "Nàng Thơ Thanh Lịch",
-    title: "The Graceful Muse - Nàng Thơ Thanh Lịch",
-    intro: "Lấy cảm hứng từ hình ảnh thiên nga — biểu tượng của sự thanh khiết, thủy chung và vẻ đẹp trường tồn — bộ sưu tập tôn vinh người phụ nữ mang khí chất thanh tao đầy cuốn hút. Mỗi thiết kế là sự hòa quyện giữa đường nét mềm mại của đôi cánh thiên nga, ánh bạc sang trọng và những viên đá lấp lánh, khắc họa hình ảnh người phụ nữ hiện đại: thanh lịch, duyên dáng và sở hữu vẻ đẹp vượt lên mọi xu hướng.",
-    banner: caraLunaBanner,
-  },
-  "huong-sac-mua-he": {
-    id: "huong-sac-mua-he",
-    name: "Hương Sắc Mùa Hè",
-    title: "Hương Sắc Mùa Hè - Nốt Nhạc Tự Do",
-    intro: "Chúng mình gói ghém toàn bộ khoảnh khắc bình yên và trong trẻo vào bộ sưu tập 'Hương Sắc Mùa Hè'. Một chiếc dây chuyền hình bướm thanh mảnh, đính những viên đá sáng trong như giọt nước, chính là 'làn gió mát' hoàn hảo cho diện mạo của bạn — nhẹ nhàng khẽ chạm vào xương quai xanh, biến bạn trở thành nàng thơ tự do, rạng rỡ dưới ánh mặt trời.",
-    banner: tryonArBanner,
-  },
-  "thanh-nha-ngan-hoa": {
-    id: "thanh-nha-ngan-hoa",
-    name: "Thanh Nhã Ngân Hoa",
-    title: "Thanh Nhã Ngân Hoa - Bản Giao Hưởng Bạc Ý",
-    intro: "Nâng niu nét duyên trong từng ánh bạc. Lấy cảm hứng từ vẻ đẹp thanh tao của hoa nở trong ánh bạc, mong manh cùng cánh bướm nhẹ nhàng giữa khu vườn ngập nắng — Thanh Nhã Ngân Hoa là bản hòa ca của vẻ đẹp nữ tính, thanh tao và đầy duyên dáng. Mỗi món trang sức là một nét chấm phá tinh tế, tựa ánh bạc khẽ ngân trên cánh hoa, thì thầm về nét duyên thanh khiết luôn nở rộ theo năm tháng.",
-    banner: heroAr,
-  },
-  "pure-soul": {
-    id: "pure-soul",
-    name: "Tâm Hồn Thuần Khiết",
-    title: "Pure Soul - Tâm Hồn Thuần Khiết",
-    intro: "Lấy cảm hứng từ vẻ đẹp thuần khiết và thanh tao của tâm hồn người phụ nữ, Pure Soul là lời tôn vinh sự dịu dàng, chân thành và tình yêu dành cho chính mình. Mỗi thiết kế mang những đường nét mềm mại cùng ánh sáng tinh tế của đá và bạc, tượng trưng cho vẻ đẹp xuất phát từ nội tâm — trong trẻo nhưng đầy cuốn hút. Pure Soul còn là lời nhắc rằng khi người phụ nữ biết yêu thương bản thân, họ sẽ luôn tỏa sáng theo cách riêng của mình.",
-    banner: caraLunaBanner,
-  }
-};
+import { COLLECTIONS_DETAILS, useStore } from "@/lib/store";
 
 export const Route = createFileRoute("/bo-suu-tap")({
   validateSearch: (s: Record<string, unknown>): Search => ({
@@ -70,25 +32,25 @@ export const Route = createFileRoute("/bo-suu-tap")({
     size: typeof s.size === "string" ? s.size : undefined,
     priceRange: typeof s.priceRange === "string" ? s.priceRange : undefined,
   }),
-  head: ({ search }: any) => {
+  head: ({ search = {} }: any) => {
     let title = "Bộ Sưu Tập — Luna Jewel";
     let desc = "Khám phá các bộ sưu tập trang sức bạc 925 của Luna Jewel.";
 
-    if (search.q) {
+    if (search?.q) {
       title = `Tìm kiếm "${search.q}" — Luna Jewel`;
       desc = `Kết quả tìm kiếm sản phẩm trang sức bạc với từ khóa "${search.q}" tại Luna Jewel.`;
-    } else if (search.collection) {
+    } else if (search?.collection) {
       const detail = COLLECTIONS_DETAILS[search.collection];
       if (detail) {
         title = `${detail.title} — Luna Jewel`;
-        desc = detail.intro;
+        desc = detail?.intro;
       }
     }
 
     const filters = [
-      search.material,
-      search.color ? `màu ${search.color}` : "",
-      search.size ? `mặt ${search.size}` : ""
+      search?.material,
+      search?.color ? `màu ${search.color}` : "",
+      search?.size ? `mặt ${search.size}` : ""
     ].filter(Boolean).join(", ");
 
     if (filters) {
@@ -106,7 +68,10 @@ export const Route = createFileRoute("/bo-suu-tap")({
   component: CollectionPage,
 });
 
-const priceToNumber = (p: string) => parseInt(p.replace(/\D/g, ""), 10) || 0;
+const priceToNumber = (p: any) => {
+  if (typeof p === "number") return p;
+  return parseInt(String(p || "").replace(/\D/g, ""), 10) || 0;
+};
 
 function applyFilters(
   items: Product[],
@@ -118,11 +83,12 @@ function applyFilters(
   if (q) {
     const needle = q.toLowerCase();
     out = out.filter((p) => {
+      if (!p) return false;
       const colName = p.collectionId ? (COLLECTIONS_DETAILS[p.collectionId]?.name || "").toLowerCase() : "";
       return (
-        p.name.toLowerCase().includes(needle) ||
-        p.shortName.toLowerCase().includes(needle) ||
-        p.info.toLowerCase().includes(needle) ||
+        (p.name || "").toLowerCase().includes(needle) ||
+        (p.shortName || "").toLowerCase().includes(needle) ||
+        (p.info || "").toLowerCase().includes(needle) ||
         colName.includes(needle)
       );
     });
@@ -130,12 +96,13 @@ function applyFilters(
 
   // 2. Lọc theo Bộ sưu tập (collection)
   if (collection) {
-    out = out.filter((p) => p.collectionId === collection);
+    out = out.filter((p) => p && p.collectionId === collection);
   }
 
   // 3. Lọc theo Màu sắc (color)
   if (color) {
     out = out.filter((p) =>
+      p && p.specs && p.specs["Màu sắc"] &&
       p.specs["Màu sắc"].toLowerCase().includes(color.toLowerCase())
     );
   }
@@ -143,6 +110,7 @@ function applyFilters(
   // 4. Lọc theo Chất liệu (material)
   if (material) {
     out = out.filter((p) =>
+      p && p.specs && p.specs["Chất liệu"] &&
       p.specs["Chất liệu"].toLowerCase().includes(material.toLowerCase())
     );
   }
@@ -150,6 +118,7 @@ function applyFilters(
   // 5. Lọc theo Kích thước mặt dây (size)
   if (size) {
     out = out.filter((p) =>
+      p && p.specs && p.specs["Kích thước"] &&
       p.specs["Kích thước"].toLowerCase().includes(size.toLowerCase())
     );
   }
@@ -178,6 +147,7 @@ function applyFilters(
 }
 
 function FilterBar() {
+  const { collections } = useStore();
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -186,7 +156,12 @@ function FilterBar() {
   const colorOptions = useMemo(() => {
     const set = new Set<string>();
     baseProducts.forEach((p) => {
-      p.specs["Màu sắc"].split("/").forEach((c) => set.add(c.trim()));
+      const rawColor = typeof p.specs?.["Màu sắc"] === "string" ? p.specs["Màu sắc"] : "";
+      rawColor
+        .split("/")
+        .map((c: string) => c.trim())
+        .filter(Boolean)
+        .forEach((c: string) => set.add(c));
     });
     return Array.from(set);
   }, []);
@@ -194,7 +169,7 @@ function FilterBar() {
   const materialOptions = useMemo(() => {
     const set = new Set<string>();
     baseProducts.forEach((p) => {
-      const mat = p.specs["Chất liệu"].trim();
+      const mat = typeof p.specs?.["Chất liệu"] === "string" ? p.specs["Chất liệu"].trim() : "";
       if (mat) set.add(mat);
     });
     return Array.from(set);
@@ -203,7 +178,7 @@ function FilterBar() {
   const sizeOptions = useMemo(() => {
     const set = new Set<string>();
     baseProducts.forEach((p) => {
-      const sz = p.specs["Kích thước"].trim();
+      const sz = typeof p.specs?.["Kích thước"] === "string" ? p.specs["Kích thước"].trim() : "";
       if (sz) set.add(sz);
     });
     return Array.from(set);
@@ -671,6 +646,7 @@ function CollectionSection({
 }
 
 function CollectionPage() {
+  const { collections, isProductsLoaded } = useStore();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
   const filtered = useMemo(() => applyFilters(baseProducts, search), [search]);
@@ -684,6 +660,46 @@ function CollectionPage() {
       if (el) setTimeout(() => el.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
     }
   }, []);
+
+  if (!isProductsLoaded) {
+    return (
+      <div className="min-h-screen bg-white">
+        <TopBar />
+        <NavBar />
+        
+        {/* Banner Skeleton */}
+        <section className="w-full bg-slate-100/50 animate-pulse h-[250px] sm:h-[400px]" />
+
+        <section className="max-w-7xl mx-auto px-6 py-12">
+          {/* Filter Bar Skeleton */}
+          <div className="bg-slate-50 border border-slate-100 rounded-xl p-6 h-24 animate-pulse mb-12" />
+
+          <div className="space-y-16">
+            {/* Collection 1 Skeleton */}
+            <div>
+              <div className="w-48 h-8 bg-slate-100/70 rounded mx-auto mb-8 animate-pulse" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
+              </div>
+            </div>
+
+            {/* Collection 2 Skeleton */}
+            <div>
+              <div className="w-48 h-8 bg-slate-100/70 rounded mx-auto mb-8 animate-pulse" />
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <ProductCardSkeleton key={i} />
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+        <Footer />
+      </div>
+    );
+  }
 
   // Exception Flow E1: Collection not found (Mã bộ sưu tập trong URL không hợp lệ)
   const isCollectionInvalid = search.collection && !COLLECTIONS_DETAILS[search.collection];
@@ -810,7 +826,7 @@ function CollectionPage() {
                     {currentCollectionDetail.title}
                   </h1>
                   <p className="text-xs md:text-sm text-muted-foreground mt-3 leading-relaxed max-w-5xl">
-                    {currentCollectionDetail.intro}
+                    {currentCollectionDetail?.intro}
                   </p>
                 </div>
               </div>
@@ -888,28 +904,28 @@ function CollectionPage() {
             <CollectionSection
               id="graceful-muse"
               title="The Graceful Muse - Nàng Thơ Thanh Lịch"
-              intro={COLLECTIONS_DETAILS["graceful-muse"].intro}
+              intro={COLLECTIONS_DETAILS["graceful-muse"]?.intro}
               products={filtered.filter((p) => p.collectionId === "graceful-muse")}
             />
 
             <CollectionSection
               id="huong-sac-mua-he"
               title="Hương Sắc Mùa Hè"
-              intro={COLLECTIONS_DETAILS["huong-sac-mua-he"].intro}
+              intro={COLLECTIONS_DETAILS["huong-sac-mua-he"]?.intro}
               products={filtered.filter((p) => p.collectionId === "huong-sac-mua-he")}
             />
 
             <CollectionSection
               id="thanh-nha-ngan-hoa"
               title="Thanh Nhã Ngân Hoa"
-              intro={COLLECTIONS_DETAILS["thanh-nha-ngan-hoa"].intro}
+              intro={COLLECTIONS_DETAILS["thanh-nha-ngan-hoa"]?.intro}
               products={filtered.filter((p) => p.collectionId === "thanh-nha-ngan-hoa")}
             />
 
             <CollectionSection
               id="pure-soul"
               title="Pure Soul - Tâm Hồn Thuần Khiết"
-              intro={COLLECTIONS_DETAILS["pure-soul"].intro}
+              intro={COLLECTIONS_DETAILS["pure-soul"]?.intro}
               products={filtered.filter((p) => p.collectionId === "pure-soul")}
             />
           </>

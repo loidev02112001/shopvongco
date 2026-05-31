@@ -42,8 +42,12 @@ CREATE TABLE IF NOT EXISTS products (
     specs JSONB NOT NULL,                         -- Thông số kỹ thuật (Kiểu dáng, chất liệu, màu sắc...) dạng JSONB
     info TEXT NOT NULL,                           -- Tiêu đề thông tin sản phẩm
     collection_id TEXT,                           -- Liên kết bộ sưu tập nếu có
+    images JSONB DEFAULT '[]'::jsonb,             -- Danh sách ảnh phụ/chi tiết sản phẩm (UC22)
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Hỗ trợ di cư tự động cho các database đã chạy trước đó
+ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
 
 -- Bật tính năng Row Level Security (RLS) để bảo vệ dữ liệu (Tùy chọn, mặc định tắt để dễ demo)
 -- ALTER TABLE users ENABLE ROW LEVEL SECURITY;

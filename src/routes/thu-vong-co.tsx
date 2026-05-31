@@ -23,11 +23,12 @@ import real2 from "@/assets/tryon-real-2.jpg";
 import store from "@/assets/tryon-store.jpg";
 import arBanner from "@/assets/tryon-ar-banner.png";
 
-type TryOnSearch = { slug?: string };
+type TryOnSearch = { slug?: string; img?: string };
 
 export const Route = createFileRoute("/thu-vong-co")({
   validateSearch: (search: Record<string, unknown>): TryOnSearch => ({
     slug: typeof search.slug === "string" ? search.slug : undefined,
+    img: typeof search.img === "string" ? search.img : undefined,
   }),
   head: () => ({
     meta: [
@@ -59,7 +60,7 @@ const symbols = [Heart, Heart, Sparkles, Sun, Star, Moon, Leaf, PawPrint, Hand, 
 
 function ThuVongCoPage() {
   const navigate = useNavigate();
-  const { slug } = Route.useSearch();
+  const { slug, img } = Route.useSearch();
 
   return (
     <div className="min-h-screen bg-background">
@@ -96,7 +97,7 @@ function ThuVongCoPage() {
       </section>
 
       {/* Thử vòng cổ trực tuyến */}
-      <NecklaceTryOn initSlug={slug} />
+      <NecklaceTryOn initSlug={slug} initImage={img} />
 
       {/* Khắc thông điệp */}
       <section className="max-w-5xl mx-auto px-6 mt-16 text-center">
@@ -107,9 +108,7 @@ function ThuVongCoPage() {
         {/* Bước 1 */}
         <div className="mt-10">
           <h3 className="text-xl md:text-2xl font-bold text-brand">BƯỚC 1</h3>
-          <p className="mt-2 text-foreground/75 font-medium">
-            Chọn sản phẩm chạm-khắc thông điệp
-          </p>
+          <p className="mt-2 text-foreground/75 font-medium">Chọn sản phẩm chạm-khắc thông điệp</p>
           <img
             src={charms}
             alt="Các mẫu charm khắc thông điệp"
@@ -123,9 +122,7 @@ function ThuVongCoPage() {
         {/* Bước 2 */}
         <div className="mt-16">
           <h3 className="text-xl md:text-2xl font-bold text-brand">BƯỚC 2</h3>
-          <p className="mt-2 text-foreground/75 font-medium">
-            Sáng tạo thông điệp cá nhân hoá
-          </p>
+          <p className="mt-2 text-foreground/75 font-medium">Sáng tạo thông điệp cá nhân hoá</p>
           <div className="mt-8 grid grid-cols-5 gap-6 max-w-md mx-auto text-brand">
             {symbols.map((Icon, i) => (
               <div key={i} className="flex items-center justify-center">

@@ -12,16 +12,14 @@ import {
   RefreshCw,
   AlertCircle,
 } from "lucide-react";
-import { products, syncProductsWithCloud } from "@/data/products";
+import { products } from "@/data/products";
 import { toast } from "sonner";
-import { useStore } from "@/lib/store";
 
 type Necklace = {
   id: string;
   name: string;
   price: string;
   src: string;
-  arSrc: string;
   arScale?: number;
   arOffsetY?: number;
   arOffsetX?: number;
@@ -36,6 +34,23 @@ const COLLECTION_DEFS = [
   { id: "pure-soul", name: "Pure Soul - Tâm Hồn Thuần Khiết" },
 ];
 
+const COLLECTIONS: Collection[] = COLLECTION_DEFS.map(({ id, name }) => ({
+  id,
+  name,
+  items: products
+    .filter((p) => p.collectionId === id)
+    .map((p) => ({
+      id: p.slug,
+      name: p.name,
+      price: p.price,
+      src: p.specs?.arImg || p.img,
+      arScale: p.specs?.arScale !== undefined ? Number(p.specs.arScale) : 60,
+      arOffsetY: p.specs?.arOffsetY !== undefined ? Number(p.specs.arOffsetY) : 55,
+      arOffsetX: p.specs?.arOffsetX !== undefined ? Number(p.specs.arOffsetX) : 0,
+      arRotation: p.specs?.arRotation !== undefined ? Number(p.specs.arRotation) : 0,
+    })),
+}));
+
 import { FilesetResolver, FaceLandmarker, PoseLandmarker } from "@mediapipe/tasks-vision";
 
 let faceLandmarker: FaceLandmarker | null = null;
@@ -45,28 +60,6 @@ let faceMode: "IMAGE" | "VIDEO" | null = null;
 let poseMode: "IMAGE" | "VIDEO" | null = null;
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-
-function resolveArSrc(productLike: any, specsObj: any) {
-  const candidates = [
-    specsObj?.arImg,
-    specsObj?.ar_img,
-    specsObj?.arImage,
-    specsObj?.ar_image,
-    specsObj?.arSrc,
-    specsObj?.ar_src,
-    productLike?.arImg,
-    productLike?.ar_img,
-    productLike?.arImage,
-    productLike?.ar_image,
-    productLike?.arSrc,
-    productLike?.ar_src,
-  ];
-
-  for (const c of candidates) {
-    if (typeof c === "string" && c.trim()) return c.trim();
-  }
-  return "";
-}
 
 function adaptiveLerp(current: number, target: number, delta: number, base = 0.1, maxBoost = 0.22) {
   const speed = Math.abs(delta);
@@ -99,35 +92,6 @@ function setLandmarkerMode(mode: "IMAGE" | "VIDEO") {
   }
 }
 
-function drawVideoCover(
-  ctx: CanvasRenderingContext2D,
-  video: HTMLVideoElement,
-  targetW: number,
-  targetH: number,
-) {
-  const vW = video.videoWidth || targetW;
-  const vH = video.videoHeight || targetH;
-  if (vW <= 0 || vH <= 0) return;
-
-  const videoAspect = vW / vH;
-  const targetAspect = targetW / targetH;
-
-  let sx = 0;
-  let sy = 0;
-  let sWidth = vW;
-  let sHeight = vH;
-
-  if (videoAspect > targetAspect) {
-    sWidth = vH * targetAspect;
-    sx = (vW - sWidth) * 0.5;
-  } else if (videoAspect < targetAspect) {
-    sHeight = vW / targetAspect;
-    sy = (vH - sHeight) * 0.5;
-  }
-
-  ctx.drawImage(video, sx, sy, sWidth, sHeight, 0, 0, targetW, targetH);
-}
-
 function drawNecklaceWrapped(
   ctx: CanvasRenderingContext2D,
   img: HTMLCanvasElement,
@@ -138,80 +102,77 @@ function drawNecklaceWrapped(
   rotationDeg: number,
   rollDeg: number,
 ) {
-  const tilt = clamp(rollDeg * 0.65, -22, 22);
-  const totalRotation = rotationDeg + tilt;
-
-  ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.globalAlpha = 1;
-  ctx.translate(centerX, centerY);
-  ctx.rotate((totalRotation * Math.PI) / 180);
-  ctx.drawImage(img, -width / 2, -height / 2, width, height);
-  ctx.restore();
-}
-
-function drawNecklaceAroundNeck(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLCanvasElement,
-  centerX: number,
-  centerY: number,
-  width: number,
-  height: number,
-  neckTightness = 0.22,
-) {
-  const slices = 36;
+  const slices = 28;
   const srcW = img.width;
   const srcH = img.height;
-  const frontWidth = width * 0.98;
-  const curveAmp = height * neckTightness;
+  const visibleCurve = clamp(1 - Math.abs(rollDeg) / 42, 0.55, 1);
+  const frontWidth = width * visibleCurve;
+  const curveAmp = height * (0.12 + (1 - visibleCurve) * 0.22);
+  const hideBack = Math.floor((1 - visibleCurve) * slices * 0.35);
 
   ctx.save();
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
+  ctx.translate(centerX, centerY);
+  ctx.rotate((rotationDeg * Math.PI) / 180);
 
   for (let i = 0; i < slices; i++) {
+    if (i < hideBack || i > slices - hideBack) continue;
     const t0 = i / slices;
     const t1 = (i + 1) / slices;
     const mid = (t0 + t1) * 0.5;
 
-    const x0 = centerX - frontWidth / 2 + t0 * frontWidth;
-    const x1 = centerX - frontWidth / 2 + t1 * frontWidth;
+    const x0 = -frontWidth / 2 + t0 * frontWidth;
+    const x1 = -frontWidth / 2 + t1 * frontWidth;
+    const xm = -frontWidth / 2 + mid * frontWidth;
 
     const yn = Math.sin((mid - 0.5) * Math.PI * 2);
-    const yOffset = yn * curveAmp;
-    const backFade = 1 - Math.min(1, Math.abs(yn) * 1.15);
+    const y = yn * curveAmp;
 
     const sx = Math.floor(t0 * srcW);
     const sw = Math.max(1, Math.floor((t1 - t0) * srcW));
 
-    ctx.globalAlpha = 0.62 + backFade * 0.38;
-    ctx.drawImage(img, sx, 0, sw, srcH, x0, centerY - height / 2 + yOffset, x1 - x0 + 0.35, height);
+    const shade = 0.92 + 0.16 * (1 - Math.abs(yn));
+    ctx.globalAlpha = clamp(shade, 0.75, 1);
+
+    ctx.drawImage(img, sx, 0, sw, srcH, x0, y - height / 2, x1 - x0 + 0.5, height);
+
+    if (i % 3 === 0) {
+      ctx.globalAlpha = 0.06;
+      ctx.strokeStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.moveTo(xm, y - height * 0.35);
+      ctx.lineTo(xm, y + height * 0.35);
+      ctx.stroke();
+    }
   }
 
   ctx.restore();
   ctx.globalAlpha = 1;
 }
 
-function buildNecklaceTexture(source: HTMLCanvasElement) {
-  return source;
+function hasUsefulAlpha(imgData: ImageData) {
+  const data = imgData.data;
+  let nonOpaque = 0;
+  const step = 16;
+  for (let i = 3; i < data.length; i += 4 * step) {
+    if (data[i] < 250) nonOpaque++;
+    if (nonOpaque > 15) return true;
+  }
+  return false;
 }
 
 function fuseNeckFromFacePose(
   face: { x: number; y: number; width: number; roll: number; confidence: number } | null,
-  pose: { x: number; y: number; width: number; roll: number; confidence: number } | null,
+  pose: { x: number; y: number; width: number; confidence: number } | null,
   W: number,
   H: number,
 ) {
   if (face && pose) {
-    const faceNormX = face.x / W;
-    const edgePenalty = clamp(Math.abs(faceNormX - 0.5) * 2.4, 0, 0.55);
-    const wp = clamp(0.72 + edgePenalty, 0.72, 0.92);
-    const wf = 1 - wp;
+    const wf = face.confidence / (face.confidence + pose.confidence);
+    const wp = 1 - wf;
     return {
       x: face.x * wf + pose.x * wp,
       y: face.y * wf + pose.y * wp,
-      width: face.width * 0.3 + pose.width * 0.7,
+      width: face.width * wf + pose.width * wp,
       roll: face.roll,
     };
   }
@@ -329,8 +290,8 @@ function detectNeckPosition(
         const symmetry = 1 - clamp(Math.abs(leftShoulder.y - rightShoulder.y) * 3.2, 0, 0.6);
         poseEstimate = {
           x: centerX,
-          y: centerY - shoulderDist * 0.02,
-          width: shoulderDist * 0.6,
+          y: centerY - shoulderDist * 0.16,
+          width: shoulderDist * 0.58,
           confidence: clamp((lVis + rVis) * 0.5 * symmetry, 0.3, 0.98),
         };
       }
@@ -346,75 +307,15 @@ function detectNeckPosition(
 
 interface NecklaceTryOnProps {
   initSlug?: string;
-  initImage?: string;
 }
 
-export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
-  const { isProductsLoaded } = useStore();
+export function NecklaceTryOn({ initSlug }: NecklaceTryOnProps) {
   const [photo, setPhoto] = useState<string | null>(null);
-  const forcedInitImageRef = useRef<string | null>(initImage || null);
   const [collectionIdx, setCollectionIdx] = useState(0);
-  const [tick, setTick] = useState(0);
-
-  // Khởi chạy đồng bộ hóa sản phẩm mới nhất từ Supabase khi component mount
-  useEffect(() => {
-    syncProductsWithCloud().then(() => {
-      setTick((t) => t + 1);
-    });
-  }, []);
-
-  const collections = useMemo(() => {
-    return COLLECTION_DEFS.map(({ id, name }) => ({
-      id,
-      name,
-      items: products
-        .filter((p) => p.collectionId === id)
-        .map((p) => {
-          let specsObj = p.specs;
-          if (typeof specsObj === "string") {
-            try {
-              specsObj = JSON.parse(specsObj);
-            } catch (e) {
-              console.error("Failed to parse specs JSON string:", e);
-            }
-          }
-          return {
-            id: p.slug,
-            name: p.name,
-            price: p.price,
-            src: p.img || "",
-            arSrc: resolveArSrc(p, specsObj),
-            arScale: specsObj?.arScale !== undefined ? Number(specsObj.arScale) : 60,
-            arOffsetY: specsObj?.arOffsetY !== undefined ? Number(specsObj.arOffsetY) : 55,
-            arOffsetX: specsObj?.arOffsetX !== undefined ? Number(specsObj.arOffsetX) : 0,
-            arRotation: specsObj?.arRotation !== undefined ? Number(specsObj.arRotation) : 0,
-          };
-        }),
-    }));
-  }, [isProductsLoaded, tick]);
-
-  const collection = collections[collectionIdx];
-  const necklaces = useMemo(() => collection?.items || [], [collection]);
+  const collection = COLLECTIONS[collectionIdx];
+  const necklaces = useMemo(() => collection.items, [collection]);
   const [selected, setSelected] = useState<Necklace>(necklaces[0]);
   const [userPicked, setUserPicked] = useState(false);
-
-  // Sync selected product's default settings and AR details when collections/necklaces load from store
-  useEffect(() => {
-    if (!selected) return;
-    const currentActive = necklaces.find((n) => n.id === selected.id);
-    if (currentActive) {
-      if (
-        currentActive.arSrc !== selected.arSrc ||
-        currentActive.name !== selected.name ||
-        currentActive.price !== selected.price ||
-        currentActive.src !== selected.src
-      ) {
-        setSelected(currentActive);
-      }
-    } else if (necklaces.length > 0 && !userPicked) {
-      setSelected(necklaces[0]);
-    }
-  }, [necklaces, selected?.id, userPicked]);
 
   // Custom AR 4-axis states (UC24)
   const [scale, setScale] = useState(60);
@@ -432,400 +333,6 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
   const targetPos = useRef({ x: 320, y: 264 });
   const lastTargetX = useRef(320);
   const lastTargetY = useRef(264);
-  const lastNeckSample = useRef({ x: 320, y: 264, t: 0 });
-  const trackingHealth = useRef(1);
-  const lastGoodLock = useRef({ x: 320, y: 264, width: 120 });
-  const deadReckon = useRef({ vx: 0, vy: 0 });
-  const forceRelockCounter = useRef(0);
-  const centerBiasCalib = useRef(0);
-  const centerBiasSamples = useRef(0);
-  const centerBiasReady = useRef(false);
-  const stableAnchorFrames = useRef(0);
-  const neckConfidence = useRef(0.8);
-  const faceLostFrames = useRef(0);
-  const recoveryBoost = useRef(0);
-  const jitterGate = useRef({ x: 0, y: 0 });
-  const motionMode = useRef<"steady" | "fast">("steady");
-  const speedEMA = useRef(0);
-  const poseTrust = useRef(0.7);
-  const predictiveOffset = useRef({ x: 0, y: 0 });
-  const neckLockActive = useRef(false);
-  const hardSnapCooldown = useRef(0);
-  const calibratingCenter = useRef(true);
-  const calibrationFrames = useRef(0);
-  const positionResidual = useRef(0);
-  const confidenceWindow = useRef<number[]>([]);
-  const microDriftClamp = useRef({ x: 0, y: 0 });
-  const slowFollowGuard = useRef(0);
-  const inertialBlend = useRef(0);
-  const lockScore = useRef(1);
-  const relockPending = useRef(false);
-  const stabilityScore = useRef(1);
-  const trackingMode = useRef<"locked" | "seeking">("locked");
-  const prevTarget = useRef({ x: 320, y: 264 });
-  const neckMidlineBias = useRef(0);
-  const dynamicYOffset = useRef(0);
-  const predictedTarget = useRef({ x: 320, y: 264 });
-  const poseDominance = useRef(0.72);
-  const trustDecay = useRef(0);
-  const autoCenterClamp = useRef(0);
-  const reacquireFrames = useRef(0);
-  const smoothCatchup = useRef(0);
-  const lockPersistence = useRef(1);
-  const driftIntegrator = useRef({ x: 0, y: 0 });
-  const confidencePenalty = useRef(0);
-  const rapidMoveBoost = useRef(0);
-  const neckCenterCorrection = useRef(0);
-  const predictiveGain = useRef(0.2);
-  const healthRecovery = useRef(0);
-  const lockBias = useRef(0);
-  const neckHistory = useRef<{ x: number; y: number; t: number }[]>([]);
-  const antiLagBlend = useRef(0.5);
-  const centerCompensation = useRef(0);
-  const freezeJitter = useRef(false);
-  const strongFollow = useRef(0.6);
-  const snapThresholdScale = useRef(0.18);
-  const poseAnchorWeight = useRef(0.75);
-  const faceAnchorWeight = useRef(0.25);
-  const neckLockThreshold = useRef(0.68);
-  const rapidTurnGuard = useRef(0);
-  const adaptivePredict = useRef(0.22);
-  const motionResidual = useRef(0);
-  const biasTrim = useRef(0);
-  const dynamicCenterX = useRef(0);
-  const confidenceEMA = useRef(0.8);
-  const lockDamping = useRef(0.38);
-  const fastSnapAlpha = useRef(0.68);
-  const steadySnapAlpha = useRef(0.46);
-  const deadZonePx = useRef(3.5);
-  const shoulderCenterBias = useRef(0.0);
-  const neckWidthTrust = useRef(0.7);
-  const hardRelockDistance = useRef(0.2);
-  const mediumRelockDistance = useRef(0.12);
-  const lockPromotionFrames = useRef(5);
-  const seekFrames = useRef(0);
-  const lockFrames = useRef(0);
-  const finalAnchorNudge = useRef(0);
-  const accelGuard = useRef(0);
-  const neckDriftBudget = useRef(0);
-  const poseStabilityEMA = useRef(0.8);
-  const frameDropComp = useRef(0);
-  const timeWarpBlend = useRef(0);
-  const immediateSnap = useRef(false);
-  const inMotionComp = useRef(0);
-  const microBiasLearn = useRef(0);
-  const anchorConfidence = useRef(0.8);
-  const adaptiveHardSnap = useRef(0);
-  const velocityClamp = useRef(28);
-  const confidenceFloor = useRef(0.35);
-  const confidenceCeil = useRef(0.98);
-  const poseRecentGood = useRef(0);
-  const userCenterDelta = useRef(0);
-  const targetMix = useRef(0.6);
-  const predictiveMix = useRef(0.28);
-  const recoveryAlpha = useRef(0.72);
-  const jitterSuppression = useRef(0.5);
-  const shoulderLineComp = useRef(0);
-  const neckMidlineLock = useRef(0);
-  const correctionEMA = useRef(0);
-  const driftScore = useRef(0);
-  const headMotionScore = useRef(0);
-  const poseVisibilityEMA = useRef(0.8);
-  const centerlineEMA = useRef(0);
-  const adaptiveLock = useRef(0.7);
-  const fastTrackAlpha = useRef(0.58);
-  const stableTrackAlpha = useRef(0.44);
-  const lockResetGate = useRef(0);
-  const antiOvershoot = useRef(0.22);
-  const predictWindowMs = useRef(50);
-  const recenterDriftX = useRef(0);
-  const recenterDriftY = useRef(0);
-  const fallbackAnchor = useRef({ x: 320, y: 264 });
-  const neckAxisAlign = useRef(0);
-  const calibrationDone = useRef(false);
-  const detectionQuality = useRef(0.8);
-  const updateBudget = useRef(0);
-  const centerOffsetLearn = useRef(0);
-  const neckState = useRef<"good" | "weak">("good");
-  const weightedAlpha = useRef(0.5);
-  const nearRealtimeBoost = useRef(0.15);
-  const adaptiveHardLock = useRef(0.2);
-  const driftResetFrames = useRef(0);
-  const velocityEMA = useRef({ x: 0, y: 0 });
-  const reliability = useRef(0.8);
-  const lockBlend = useRef(0.64);
-  const poseBiasTrim = useRef(0);
-  const offsetLearning = useRef(0);
-  const neckAnchorFusion = useRef(0.72);
-  const relockConfidence = useRef(0.75);
-  const positionGuard = useRef(0);
-  const snapGuard = useRef(0);
-  const motionAdaptive = useRef(0.3);
-  const steadyAdaptive = useRef(0.2);
-  const driftRecovery = useRef(0);
-  const dynamicBias = useRef(0);
-  const arLockState = useRef(1);
-  const centerLock = useRef(0);
-  const kinematicHint = useRef({ x: 0, y: 0 });
-  const lockQuality = useRef(0.8);
-  const targetReliability = useRef(0.8);
-  const transientRecenter = useRef(0);
-  const lockAggressiveness = useRef(0.6);
-  const followAggressiveness = useRef(0.6);
-  const trackAlpha = useRef(0.5);
-  const lockAlpha = useRef(0.65);
-  const seekAlpha = useRef(0.8);
-  const poseMidline = useRef(0);
-  const recenterGain = useRef(0.16);
-  const relockBoost = useRef(0.22);
-  const driftNudge = useRef(0.08);
-  const hardSnapDistPx = useRef(70);
-  const mediumSnapDistPx = useRef(45);
-  const confidenceHold = useRef(0.72);
-  const detectLostWindow = useRef(6);
-  const qualityBoost = useRef(0);
-  const smartPredict = useRef(0.24);
-  const jitterFreezeWindow = useRef(0);
-  const poseVisibilityFloor = useRef(0.42);
-  const stableWindow = useRef(0);
-  const motionWindow = useRef(0);
-  const anchorBlendEMA = useRef(0.7);
-  const speedState = useRef(0);
-  const centerBiasPx = useRef(0);
-  const neckTrueCenter = useRef(0);
-  const hardLockState = useRef(false);
-  const adaptiveSnap = useRef(0);
-  const confidenceLock = useRef(0.76);
-  const poseMidCorrection = useRef(0);
-  const lateralClamp = useRef(0);
-  const verticalClamp = useRef(0);
-  const temporalLock = useRef(0);
-  const arPredictor = useRef(0.2);
-  const dynamicLock = useRef(0);
-  const lockRecover = useRef(0);
-  const arCenterBias = useRef(0);
-  const transitionSmooth = useRef(0.5);
-  const currentMode = useRef<"fast" | "stable">("fast");
-  const anchorState = useRef({ x: 320, y: 264 });
-  const stabilityWindow = useRef(0);
-  const lockWindow = useRef(0);
-  const aggressiveCatchup = useRef(0.7);
-  const safeCatchup = useRef(0.5);
-  const realtimeComp = useRef(0);
-  const centerBlend = useRef(0);
-  const residualCorrection = useRef(0);
-  const detectLatencyComp = useRef(0);
-  const smartSnap = useRef(0);
-  const trackingDamping = useRef(0.3);
-  const neckLockDrift = useRef(0);
-  const confidenceDrift = useRef(0);
-  const fastMotionGuard = useRef(0);
-  const stableMotionGuard = useRef(0);
-  const arStateMachine = useRef(0);
-  const poseSupport = useRef(0.7);
-  const faceSupport = useRef(0.3);
-  const weightedCenter = useRef(0);
-  const antiJitter = useRef(0.4);
-  const smartCenter = useRef(0);
-  const lowLightPenalty = useRef(0);
-  const lockTimeout = useRef(0);
-  const driftTimeout = useRef(0);
-  const instantReacquire = useRef(0);
-  const lockMemory = useRef({ x: 320, y: 264 });
-  const motionPredictor = useRef({ x: 0, y: 0 });
-  const confidencePredictor = useRef(0.8);
-  const trackTuning = useRef(0.5);
-  const neckMidBias = useRef(0);
-  const poseCenterBias = useRef(0.01);
-  const anchorReset = useRef(0);
-  const neckSignal = useRef(0.8);
-  const arCompensator = useRef(0);
-  const fastTrackGate = useRef(0);
-  const fallbackCenter = useRef({ x: 320, y: 264 });
-  const qualityGate = useRef(0.6);
-  const poseConfidence = useRef(0.8);
-  const faceConfidence = useRef(0.7);
-  const weightedDrift = useRef(0);
-  const snapMode = useRef<"none" | "medium" | "hard">("none");
-  const smartAnchor = useRef({ x: 320, y: 264 });
-  const lockCenterX = useRef(0);
-  const lockCenterY = useRef(0);
-  const arFastPath = useRef(true);
-  const correctionGain = useRef(0.12);
-  const poseLockGain = useRef(0.7);
-  const faceLockGain = useRef(0.3);
-  const lockStability = useRef(0.8);
-  const smoothGain = useRef(0.5);
-  const relockGain = useRef(0.75);
-  const driftClamp = useRef(0);
-  const velocityTrust = useRef(0.7);
-  const centerTrust = useRef(0.8);
-  const anchorTrust = useRef(0.8);
-  const recoverTrust = useRef(0.7);
-  const predictiveTrust = useRef(0.25);
-  const trackingSnap = useRef(0);
-  const arPrecisionMode = useRef(true);
-  const neckCenterLine = useRef(0);
-  const finalBias = useRef(0);
-  const arResponsiveness = useRef(0.9);
-  const trackingCompensation = useRef(0);
-  const currentConfidence = useRef(0.8);
-  const fallbackConfidence = useRef(0.6);
-  const lockReliability = useRef(0.8);
-  const guardFrames = useRef(0);
-  const smoothingState = useRef(0);
-  const confidenceState = useRef(0);
-  const phaseLock = useRef(0);
-  const arState = useRef(0);
-  const fastFollow = useRef(0.65);
-  const stableFollow = useRef(0.48);
-  const xCenterNudge = useRef(0);
-  const yCenterNudge = useRef(0);
-  const widthStabilizer = useRef(0);
-  const rollStabilizer = useRef(0);
-  const smartRelock = useRef(0);
-  const lockThresholdPx = useRef(62);
-  const dynamicThresholdPx = useRef(38);
-  const centerBiasDynamic = useRef(0);
-  const trackingBoost = useRef(0);
-  const poseCenterWeight = useRef(0.72);
-  const faceCenterWeight = useRef(0.28);
-  const confidenceScale = useRef(1);
-  const smoothScale = useRef(1);
-  const lockScale = useRef(1);
-  const adaptiveScale = useRef(1);
-  const driftScale = useRef(1);
-  const correctionScale = useRef(1);
-  const fastScale = useRef(1);
-  const stableScale = useRef(1);
-  const centerScale = useRef(1);
-  const motionScale = useRef(1);
-  const predictorScale = useRef(1);
-  const recoveryScale = useRef(1);
-  const gainScale = useRef(1);
-  const tuningState = useRef(0);
-  const trackingState = useRef(0);
-  const neckStateCode = useRef(0);
-  const centerState = useRef(0);
-  const lockState = useRef(0);
-  const recoverState = useRef(0);
-  const detectState = useRef(0);
-  const fastState = useRef(0);
-  const stableState = useRef(0);
-  const predictState = useRef(0);
-  const guardState = useRef(0);
-  const blendState = useRef(0);
-  const calibrateState = useRef(0);
-  const responseState = useRef(0);
-  const anchorQuality = useRef(0.8);
-  const updateQuality = useRef(0.8);
-  const sampleQuality = useRef(0.8);
-  const lockQualityScore = useRef(0.8);
-  const stabilityQuality = useRef(0.8);
-  const confidenceQuality = useRef(0.8);
-  const poseQuality = useRef(0.8);
-  const faceQuality = useRef(0.8);
-  const centerQuality = useRef(0.8);
-  const finalQuality = useRef(0.8);
-  const motionQuality = useRef(0.8);
-  const driftQuality = useRef(0.8);
-  const resetQuality = useRef(0.8);
-  const recoverQuality = useRef(0.8);
-  const predictQuality = useRef(0.8);
-  const biasQuality = useRef(0.8);
-  const clampQuality = useRef(0.8);
-  const snapQuality = useRef(0.8);
-  const catchupQuality = useRef(0.8);
-  const followQuality = useRef(0.8);
-  const fusionQuality = useRef(0.8);
-  const healthQuality = useRef(0.8);
-  const lagQuality = useRef(0.8);
-  const fastQuality = useRef(0.8);
-  const stableQuality = useRef(0.8);
-  const lockQuality2 = useRef(0.8);
-  const centerQuality2 = useRef(0.8);
-  const arQuality = useRef(0.8);
-  const smartQuality = useRef(0.8);
-  const neckQuality = useRef(0.8);
-  const positionQuality = useRef(0.8);
-  const realtimeQuality = useRef(0.8);
-  const accuracyQuality = useRef(0.8);
-  const reliabilityQuality = useRef(0.8);
-  const robustnessQuality = useRef(0.8);
-  const finalState = useRef(0);
-  const perfState = useRef(0);
-  const mainLoopState = useRef(0);
-  const transientState = useRef(0);
-  const lockLoopState = useRef(0);
-  const catchupState = useRef(0);
-  const driftLoopState = useRef(0);
-  const biasLoopState = useRef(0);
-  const centerLoopState = useRef(0);
-  const motionLoopState = useRef(0);
-  const detectLoopState = useRef(0);
-  const smoothingLoopState = useRef(0);
-  const qualityLoopState = useRef(0);
-  const responseLoopState = useRef(0);
-  const predictLoopState = useRef(0);
-  const recoverLoopState = useRef(0);
-  const trackLoopState = useRef(0);
-  const anchorLoopState = useRef(0);
-  const runtimeLoopState = useRef(0);
-  const heartBeat = useRef(0);
-  const sampleTick = useRef(0);
-  const driftTick = useRef(0);
-  const guardTick = useRef(0);
-  const lockTick = useRef(0);
-  const resetTick = useRef(0);
-  const recoverTick = useRef(0);
-  const centerTick = useRef(0);
-  const followTick = useRef(0);
-  const snapTick = useRef(0);
-  const blendTick = useRef(0);
-  const modeTick = useRef(0);
-  const stateTick = useRef(0);
-  const syncTick = useRef(0);
-  const updateTick = useRef(0);
-  const qualityTick = useRef(0);
-  const motionTick = useRef(0);
-  const accuracyTick = useRef(0);
-  const reliabilityTick = useRef(0);
-  const stabilityTick = useRef(0);
-  const anchorTick = useRef(0);
-  const detectTick = useRef(0);
-  const fastTick = useRef(0);
-  const stableTick = useRef(0);
-  const predictTick = useRef(0);
-  const finalTick = useRef(0);
-  const overallTick = useRef(0);
-  const tuningTick = useRef(0);
-  const refitTick = useRef(0);
-  const precisionTick = useRef(0);
-  const lockDriftTick = useRef(0);
-  const antiLagTick = useRef(0);
-  const centerDriftTick = useRef(0);
-  const fallbackTick = useRef(0);
-  const smartTick = useRef(0);
-  const robustTick = useRef(0);
-  const trackTick = useRef(0);
-  const userMoveTick = useRef(0);
-  const neckMoveTick = useRef(0);
-  const confidenceTick = useRef(0);
-  const visualTick = useRef(0);
-  const cameraTick = useRef(0);
-  const perfTick = useRef(0);
-  const throttleTick = useRef(0);
-  const settleTick = useRef(0);
-  const clampTick = useRef(0);
-  const snapLoopTick = useRef(0);
-  const healthTick = useRef(0);
-  const driftLoopTick2 = useRef(0);
-  const centerLoopTick2 = useRef(0);
-  const smoothingTick2 = useRef(0);
-  const responseTick2 = useRef(0);
-  const qualityTick2 = useRef(0);
-  const detectTick2 = useRef(0);
-  const finalLoopTick = useRef(0);
   const frameCounter = useRef(0);
   const lastInferenceTime = useRef(0);
   const cssRenderSize = useRef({ width: 640, height: 480 });
@@ -845,86 +352,233 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
   // Canvas phụ chứa ảnh vòng cổ đã được khử sạch nền trắng (Chroma Keyed Transparent Canvas)
   const [transparentNecklace, setTransparentNecklace] = useState<HTMLCanvasElement | null>(null);
 
-  // Dùng ảnh gốc để đảm bảo AR giống 1:1 ảnh sản phẩm đã bấm thử
+  // Thuật toán khử nền trắng thích ứng (Adaptive BFS + Edge Feathering) loại bỏ 100% nền và bóng mờ
   useEffect(() => {
     const img = new Image();
+
+    // Chỉ set crossOrigin nếu ảnh là từ nguồn ngoài (bắt đầu bằng http/https và không phải cùng domain)
     const isExternal =
-      selected.arSrc &&
-      selected.arSrc.startsWith("http") &&
-      !selected.arSrc.includes(window.location.host);
+      selected.src.startsWith("http") && !selected.src.includes(window.location.host);
     if (isExternal) {
       img.crossOrigin = "anonymous";
     }
 
-    if (!selected.arSrc) {
-      setTransparentNecklace(null);
-      return;
-    }
-
-    img.src = selected.arSrc;
+    img.src = selected.src;
     img.onload = () => {
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width = img.naturalWidth || 800;
-      offCanvas.height = img.naturalHeight || 800;
-      const offCtx = offCanvas.getContext("2d");
-      if (!offCtx) {
-        setTransparentNecklace(null);
-        return;
+      try {
+        const offCanvas = document.createElement("canvas");
+        offCanvas.width = img.naturalWidth || 800;
+        offCanvas.height = img.naturalHeight || 800;
+        const offCtx = offCanvas.getContext("2d");
+        if (!offCtx) {
+          setTransparentNecklace(img as any);
+          return;
+        }
+
+        offCtx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
+        const imgData = offCtx.getImageData(0, 0, offCanvas.width, offCanvas.height);
+        const data = imgData.data;
+
+        if (hasUsefulAlpha(imgData)) {
+          setTransparentNecklace(offCanvas);
+          return;
+        }
+
+        // 1. LẤY MẪU MÀU NỀN ĐỘNG TỪ CÁC RÌA NGOÀI CỦA ẢNH
+        const w = offCanvas.width;
+        const h = offCanvas.height;
+        const corners = [
+          { x: 0, y: 0 },
+          { x: w - 1, y: 0 },
+          { x: 0, y: h - 1 },
+          { x: w - 1, y: h - 1 },
+          { x: Math.floor(w / 2), y: 0 },
+          { x: 0, y: Math.floor(h / 2) },
+        ];
+
+        let bgSumR = 0,
+          bgSumG = 0,
+          bgSumB = 0;
+        let validSamples = 0;
+
+        corners.forEach((c) => {
+          const idx = (c.y * w + c.x) * 4;
+          if (data[idx] > 30 || data[idx + 1] > 30 || data[idx + 2] > 30) {
+            bgSumR += data[idx];
+            bgSumG += data[idx + 1];
+            bgSumB += data[idx + 2];
+            validSamples++;
+          }
+        });
+
+        const bgR = validSamples > 0 ? bgSumR / validSamples : 255;
+        const bgG = validSamples > 0 ? bgSumG / validSamples : 255;
+        const bgB = validSamples > 0 ? bgSumB / validSamples : 255;
+
+        // BFS loang biên (Border-Seeded Flood Fill) để tách toàn bộ nền trắng/xám và bóng đổ studio
+        const visited = new Uint8Array(w * h); // 0 = non-bg, 1 = bg
+        const queue: number[] = [];
+
+        // Kiểm tra xem một pixel có thuộc vùng nền không (gần với màu nền chuẩn hoặc bóng mờ trung tính)
+        const isBgColor = (r: number, g: number, b: number) => {
+          const dR = r - bgR;
+          const dG = g - bgG;
+          const dB = b - bgB;
+          const dist = Math.sqrt(dR * dR + dG * dG + dB * dB);
+
+          // Rất gần màu nền
+          if (dist < 55) {
+            return true;
+          }
+
+          // Rất sáng (gần như trắng tinh)
+          const brightness = (r + g + b) / 3;
+          if (brightness > 235) {
+            return true;
+          }
+
+          // Khử bóng đổ studio (Shadow removal): sắc độ trung tính, độ sáng trung bình
+          if (brightness > 100 && brightness <= 230) {
+            const maxDiff = Math.max(Math.abs(r - g), Math.abs(r - b), Math.abs(g - b));
+            if (maxDiff < 15) {
+              return true;
+            }
+          }
+
+          return false;
+        };
+
+        // Kích hoạt hàng đợi loang tại các cạnh viền
+        for (let x = 0; x < w; x++) {
+          let idx = (0 * w + x) * 4;
+          if (isBgColor(data[idx], data[idx + 1], data[idx + 2])) {
+            visited[0 * w + x] = 1;
+            queue.push(x, 0);
+          }
+          idx = ((h - 1) * w + x) * 4;
+          if (isBgColor(data[idx], data[idx + 1], data[idx + 2])) {
+            visited[(h - 1) * w + x] = 1;
+            queue.push(x, h - 1);
+          }
+        }
+        for (let y = 0; y < h; y++) {
+          let idx = (y * w + 0) * 4;
+          if (isBgColor(data[idx], data[idx + 1], data[idx + 2])) {
+            if (!visited[y * w + 0]) {
+              visited[y * w + 0] = 1;
+              queue.push(0, y);
+            }
+          }
+          idx = (y * w + (w - 1)) * 4;
+          if (isBgColor(data[idx], data[idx + 1], data[idx + 2])) {
+            if (!visited[y * w + (w - 1)]) {
+              visited[y * w + (w - 1)] = 1;
+              queue.push(w - 1, y);
+            }
+          }
+        }
+
+        // Chạy loang lân cận BFS (4 hướng)
+        let head = 0;
+        const dx = [0, 0, 1, -1];
+        const dy = [1, -1, 0, 0];
+
+        while (head < queue.length) {
+          const cx = queue[head++];
+          const cy = queue[head++];
+
+          for (let i = 0; i < 4; i++) {
+            const nx = cx + dx[i];
+            const ny = cy + dy[i];
+
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+              const nIdx = ny * w + nx;
+              if (!visited[nIdx]) {
+                const pixelIdx = nIdx * 4;
+                if (isBgColor(data[pixelIdx], data[pixelIdx + 1], data[pixelIdx + 2])) {
+                  visited[nIdx] = 1;
+                  queue.push(nx, ny);
+                }
+              }
+            }
+          }
+        }
+
+        // Khử viền trắng lởm chởm (Edge Feathering) cho các pixel rìa
+        const edgePixels: number[] = [];
+        for (let y = 1; y < h - 1; y++) {
+          for (let x = 1; x < w - 1; x++) {
+            const idx = y * w + x;
+            if (visited[idx] === 0) {
+              // Điểm dây chuyền
+              if (
+                visited[(y - 1) * w + x] === 1 ||
+                visited[(y + 1) * w + x] === 1 ||
+                visited[y * w + (x - 1)] === 1 ||
+                visited[y * w + (x + 1)] === 1
+              ) {
+                edgePixels.push(idx);
+              }
+            }
+          }
+        }
+
+        edgePixels.forEach((idx) => {
+          const pixelIdx = idx * 4;
+          const r = data[pixelIdx];
+          const g = data[pixelIdx + 1];
+          const b = data[pixelIdx + 2];
+
+          const dR = r - bgR;
+          const dG = g - bgG;
+          const dB = b - bgB;
+          const dist = Math.sqrt(dR * dR + dG * dG + dB * dB);
+
+          if (dist < 32) {
+            visited[idx] = 1;
+          } else if (dist < 92) {
+            const alphaFactor = (dist - 32) / (92 - 32);
+            data[pixelIdx + 3] = Math.max(36, Math.round(data[pixelIdx + 3] * alphaFactor));
+          }
+        });
+
+        // Áp dụng alpha = 0 cho tất cả pixel nền đã loang
+        for (let i = 0; i < w * h; i++) {
+          if (visited[i] === 1) {
+            data[i * 4 + 3] = 0;
+          }
+        }
+
+        offCtx.putImageData(imgData, 0, 0);
+        setTransparentNecklace(offCanvas);
+      } catch (err) {
+        console.warn("Lỗi khử nền trắng, sử dụng ảnh gốc làm fallback:", err);
+        setTransparentNecklace(img as any);
       }
-      offCtx.imageSmoothingEnabled = true;
-      offCtx.imageSmoothingQuality = "high";
-      offCtx.drawImage(img, 0, 0, offCanvas.width, offCanvas.height);
-      setTransparentNecklace(offCanvas);
     };
     img.onerror = () => {
-      console.error("Lỗi tải ảnh vòng cổ AR:", selected.arSrc);
-      setTransparentNecklace(null);
+      console.error("Lỗi tải ảnh vòng cổ:", selected.src);
     };
   }, [selected]);
 
-  // Tự động chuyển bộ sưu tập và chọn sản phẩm theo slug từ URL hoặc slug gần nhất user đã bấm thử
+  // Tự động chuyển bộ sưu tập và chọn sản phẩm dựa trên initSlug truyền sang
   useEffect(() => {
-    const rememberedSlug =
-      typeof window !== "undefined"
-        ? localStorage.getItem("last-tryon-slug") || undefined
-        : undefined;
-    const targetSlug = initSlug || rememberedSlug;
-
-    if (!targetSlug) return;
-
-    const prod = products.find((p) => p.slug === targetSlug);
-    if (!prod) return;
-
-    const colIdx = COLLECTION_DEFS.findIndex((c) => c.id === prod.collectionId);
-
-    const preferredSrc = resolveArSrc(prod, prod.specs);
-
-    if (colIdx !== -1) {
-      setCollectionIdx(colIdx);
-      const necklaceItem = collections[colIdx]?.items.find((item) => item.id === targetSlug);
-      if (necklaceItem) {
-        setSelected({ ...necklaceItem, arSrc: preferredSrc });
+    if (initSlug) {
+      const prod = products.find((p) => p.slug === initSlug);
+      if (prod) {
+        const colIdx = COLLECTION_DEFS.findIndex((c) => c.id === prod.collectionId);
+        if (colIdx !== -1) {
+          setCollectionIdx(colIdx);
+          const necklaceItem = COLLECTIONS[colIdx].items.find((item) => item.id === initSlug);
+          if (necklaceItem) {
+            setSelected(necklaceItem);
+            setUserPicked(true);
+            toast.info(`Đã tải mẫu thử: ${necklaceItem.name}`);
+          }
+        }
       }
-    } else {
-      setSelected({
-        id: prod.slug,
-        name: prod.name,
-        price: prod.price,
-        src: prod.img || "",
-        arSrc: preferredSrc,
-        arScale: prod.specs?.arScale !== undefined ? Number(prod.specs.arScale) : 60,
-        arOffsetY: prod.specs?.arOffsetY !== undefined ? Number(prod.specs.arOffsetY) : 55,
-        arOffsetX: prod.specs?.arOffsetX !== undefined ? Number(prod.specs.arOffsetX) : 0,
-        arRotation: prod.specs?.arRotation !== undefined ? Number(prod.specs.arRotation) : 0,
-      });
     }
-
-    setUserPicked(true);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("last-tryon-slug", targetSlug);
-    }
-    toast.info(`Đã tải mẫu thử: ${prod.name}`);
-  }, [initSlug, initImage, collections, isProductsLoaded, tick]);
+  }, [initSlug]);
 
   // Tải trước ảnh tĩnh chân dung và lưu cache để vẽ mượt mà, không giật lag
   useEffect(() => {
@@ -946,7 +600,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
 
   const handleCollectionChange = (idx: number) => {
     setCollectionIdx(idx);
-    const col = collections[idx];
+    const col = COLLECTIONS[idx];
     if (col && col.items.length > 0) {
       setSelected(col.items[0]);
       setUserPicked(false);
@@ -979,10 +633,6 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
 
   const onFile = (file?: File | null) => {
     if (!file) return;
-    if (!selected.arSrc) {
-      toast.error("Ảnh chưa có ảnh ar không thể test");
-      return;
-    }
 
     // Tắt live camera ngay lập tức để chuyển hẳn sang chế độ ảnh tĩnh, tránh xung đột vẽ song song
     stopCamera();
@@ -1068,14 +718,14 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
   };
 
   const goPrev = useCallback(() => {
-    handleCollectionChange((collectionIdx - 1 + collections.length) % collections.length);
+    handleCollectionChange((collectionIdx - 1 + COLLECTIONS.length) % COLLECTIONS.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionIdx, collections.length]);
+  }, [collectionIdx]);
 
   const goNext = useCallback(() => {
-    handleCollectionChange((collectionIdx + 1) % collections.length);
+    handleCollectionChange((collectionIdx + 1) % COLLECTIONS.length);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [collectionIdx, collections.length]);
+  }, [collectionIdx]);
 
   const stopCamera = useCallback(() => {
     if (animationFrameId.current) {
@@ -1095,19 +745,18 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
     const canvas = displayCanvasRef.current;
     if (!video || !canvas || !cameraActive) return;
 
-    const parent = canvas.parentElement;
-    const cssW = Math.max(1, Math.round(parent?.clientWidth || video.videoWidth || 640));
-    const cssH = Math.max(1, Math.round(parent?.clientHeight || video.videoHeight || 480));
+    const cssW = video.videoWidth || 640;
+    const cssH = video.videoHeight || 480;
     cssRenderSize.current = { width: cssW, height: cssH };
     const ctx = setCanvasToHiDPI(canvas, cssW, cssH);
     if (!ctx) return;
 
-    drawVideoCover(ctx, video, cssW, cssH);
+    ctx.drawImage(video, 0, 0, cssW, cssH);
 
     if (!simulateNoFace && !faceScanning) {
       frameCounter.current++;
       const now = performance.now();
-      const shouldInfer = now - lastInferenceTime.current >= 16;
+      const shouldInfer = now - lastInferenceTime.current >= 45;
 
       if (shouldInfer) {
         lastInferenceTime.current = now;
@@ -1124,21 +773,21 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
           } else {
             const dx = neck.x - smoothedNeck.current.x;
             const dy = neck.y - smoothedNeck.current.y;
-            smoothedNeck.current.x = adaptiveLerp(smoothedNeck.current.x, neck.x, dx, 0.28, 0.34);
-            smoothedNeck.current.y = adaptiveLerp(smoothedNeck.current.y, neck.y, dy, 0.28, 0.34);
+            smoothedNeck.current.x = adaptiveLerp(smoothedNeck.current.x, neck.x, dx, 0.08, 0.24);
+            smoothedNeck.current.y = adaptiveLerp(smoothedNeck.current.y, neck.y, dy, 0.08, 0.24);
             smoothedNeck.current.width = adaptiveLerp(
               smoothedNeck.current.width,
               neck.width,
               neck.width - smoothedNeck.current.width,
-              0.24,
-              0.24,
+              0.09,
+              0.16,
             );
             smoothedNeck.current.roll = adaptiveLerp(
               smoothedNeck.current.roll || 0,
               neck.roll || 0,
               (neck.roll || 0) - (smoothedNeck.current.roll || 0),
-              0.26,
-              0.24,
+              0.14,
+              0.18,
             );
           }
 
@@ -1154,17 +803,8 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
             baseNeckWidth.current = neck.width;
           }
 
-          const centerBiasX = cssW * 0.01;
-          lastTargetX.current = smoothedNeck.current.x + cssW * (offsetX / 100) + centerBiasX;
+          lastTargetX.current = smoothedNeck.current.x + cssW * (offsetX / 100);
           lastTargetY.current = smoothedNeck.current.y + cssH * ((offsetY - 55) / 100);
-
-          const driftX = Math.abs(lastTargetX.current - targetPos.current.x);
-          const driftY = Math.abs(lastTargetY.current - targetPos.current.y);
-          if (driftX > cssW * 0.18 || driftY > cssH * 0.18) {
-            targetPos.current.x = lastTargetX.current;
-            targetPos.current.y = lastTargetY.current;
-          }
-
           if (!faceDetected) setFaceDetected(true);
         } else {
           const defaultX = cssW / 2 + cssW * (offsetX / 100);
@@ -1190,15 +830,15 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
         targetPos.current.x,
         lastTargetX.current,
         lastTargetX.current - targetPos.current.x,
-        0.5,
-        0.38,
+        0.1,
+        0.18,
       );
       targetPos.current.y = adaptiveLerp(
         targetPos.current.y,
         lastTargetY.current,
         lastTargetY.current - targetPos.current.y,
-        0.5,
-        0.38,
+        0.1,
+        0.18,
       );
     } else {
       const defaultX = cssW / 2 + cssW * (offsetX / 100);
@@ -1233,17 +873,11 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
       const limitScaleMult = clamp(smoothScaleMultiplier.current, 0.62, 1.45);
       const currentScale = scale * limitScaleMult;
 
-      const w = cssW * (currentScale / 100) * 0.5;
+      const w = cssW * (currentScale / 100);
       const aspectRatio = transparentNecklace.height / transparentNecklace.width;
       const h = w * aspectRatio;
-      const roll = smoothedNeck.current.roll || 0;
-      const rollRad = (roll * Math.PI) / 180;
-      const sideLockX = Math.sin(rollRad) * (w * 0.14);
-      const tiltLiftY = (1 - Math.cos(rollRad)) * (h * 0.34);
-
-      const centerX = targetPos.current.x + sideLockX;
-      const neckDrop = h * 0.16 + cssH * 0.006;
-      const centerY = targetPos.current.y + neckDrop - tiltLiftY;
+      const centerX = targetPos.current.x;
+      const centerY = targetPos.current.y;
 
       drawNecklaceWrapped(
         ctx,
@@ -1253,7 +887,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
         w,
         h,
         rotation,
-        roll,
+        smoothedNeck.current.roll || 0,
       );
     }
 
@@ -1291,7 +925,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
       const limitScaleMult = Math.max(0.65, Math.min(1.45, scaleMultiplier));
       const currentScale = scale * limitScaleMult;
 
-      const w = cssW * (currentScale / 100) * 0.5;
+      const w = cssW * (currentScale / 100);
       const aspectRatio = transparentNecklace.height / transparentNecklace.width;
       const h = w * aspectRatio;
 
@@ -1299,8 +933,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
       const posY = targetPos.current.y;
 
       const centerX = posX + cssW * (offsetX / 100);
-      const neckDrop = h * 0.16 + cssH * 0.006;
-      const centerY = posY + cssH * ((offsetY - 55) / 100) + neckDrop;
+      const centerY = posY + cssH * ((offsetY - 55) / 100);
 
       drawNecklaceWrapped(
         ctx,
@@ -1341,18 +974,6 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
   }, [cameraActive, renderLiveAR]);
 
   const startCamera = useCallback(async () => {
-    const matched = selected?.id ? products.find((p) => p.slug === selected.id) : undefined;
-    const activeArSrc = selected?.arSrc || (matched ? resolveArSrc(matched, matched.specs) : "");
-
-    if (!activeArSrc) {
-      toast.error("Sản phẩm này chưa có ảnh AR nên chưa thể test camera");
-      return;
-    }
-
-    if (selected && selected.arSrc !== activeArSrc) {
-      setSelected((prev) => (prev ? { ...prev, arSrc: activeArSrc } : prev));
-    }
-
     setCameraError(null);
     setPhoto(null);
 
@@ -1415,7 +1036,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
       toast.error("Camera permission denied!");
       setCameraActive(false);
     }
-  }, [simulateNoFace, selected?.id, selected?.arSrc]);
+  }, [simulateNoFace]);
 
   const capturePhoto = useCallback(() => {
     const video = videoRef.current;
@@ -1486,8 +1107,10 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
     if (cameraActive) {
       if (simulateNoFace) {
         setFaceDetected(false);
+        toast.error("Không phát hiện khuôn mặt (Face not detected)!");
       } else {
         setFaceDetected(true);
+        toast.success("Đã phát hiện khuôn mặt thành công.");
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1516,12 +1139,12 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
         </p>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-6 items-start">
+      <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1.3fr_1fr] gap-6">
         {/* Try-on Preview Screen */}
-        <div className="bg-brand-soft/20 rounded-xl p-5 border border-brand/10 flex flex-col gap-4 shadow-sm">
+        <div className="bg-brand-soft/20 rounded-xl p-5 border border-brand/10 flex flex-col justify-between shadow-sm">
           {/* Main Visual Screen */}
           <div
-            className="relative w-full mx-auto bg-slate-900 rounded-xl overflow-hidden border border-slate-800/80 shadow-inner group aspect-4/5 sm:aspect-3/4 md:aspect-3/4 lg:aspect-3/4 xl:aspect-4/5 max-h-[72vh]"
+            className="relative w-full flex-1 min-h-[440px] mx-auto bg-slate-900 rounded-lg overflow-hidden flex items-center justify-center border border-slate-800 shadow-inner group"
             onDragOver={(e) => e.preventDefault()}
             onDrop={(e) => {
               e.preventDefault();
@@ -1564,11 +1187,6 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
                 <span className="text-[10px] text-slate-500 bg-slate-800 px-3 py-1 rounded-full uppercase tracking-wider font-bold">
                   hoặc bật camera để chụp live
                 </span>
-                {!selected.arSrc && (
-                  <span className="text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-md mt-2 font-semibold">
-                    Ảnh chưa có ảnh ar không thể test
-                  </span>
-                )}
               </div>
             )}
 
@@ -1810,10 +1428,10 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
             {/* Tên bộ sưu tập hiện tại */}
             <div className="flex items-center justify-between gap-2 mt-4 bg-brand-soft/40 px-3 py-2 rounded-lg border border-brand/5">
               <p className="text-xs font-bold tracking-wider text-brand uppercase truncate">
-                {collection?.name}
+                {collection.name}
               </p>
               <span className="text-[10px] font-bold text-brand bg-white px-2 py-0.5 rounded shadow-2xs shrink-0">
-                {collectionIdx + 1}/{collections.length}
+                {collectionIdx + 1}/{COLLECTIONS.length}
               </span>
             </div>
 
@@ -1825,19 +1443,14 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
             <div className="mt-5 relative px-1">
               <div className="grid grid-cols-2 gap-3.5">
                 {necklaces.map((n) => {
-                  const active = selected?.id === n.id;
+                  const active = selected.id === n.id;
                   return (
                     <button
                       type="button"
                       key={n.id}
                       onClick={() => {
-                        forcedInitImageRef.current = null;
                         setSelected(n);
                         setUserPicked(true);
-                        if (!n.arSrc) {
-                          toast.error("Ảnh chưa có ảnh ar không thể test");
-                          stopCamera();
-                        }
                       }}
                       aria-pressed={active && userPicked}
                       className={`group relative rounded-lg overflow-hidden border bg-white text-left transition-all duration-200 flex flex-col ${

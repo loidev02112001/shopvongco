@@ -3,6 +3,8 @@ import { useEffect, useState } from "react";
 import { Package, Clock, ShieldCheck, MapPin, Phone, User, ShoppingBag, ArrowRight } from "lucide-react";
 import { TopBar, NavBar, Footer } from "@/components/SiteChrome";
 import { storeActions, useStore, type Order } from "@/lib/store";
+import { toast } from "sonner";
+import { formatProductPrice } from "@/lib/utils";
 
 export const Route = createFileRoute("/don-hang")({
   head: () => ({
@@ -14,7 +16,7 @@ export const Route = createFileRoute("/don-hang")({
   component: OrdersPage,
 });
 
-const formatPrice = (n: number) => n.toLocaleString("vi-VN") + "VNĐ";
+const formatPrice = (n: number) => formatProductPrice(n);
 
 const formatDate = (isoString: string) => {
   try {
@@ -37,6 +39,22 @@ function OrdersPage() {
   const { currentUser } = useStore();
   const [orders, setOrders] = useState<Order[]>([]);
   // const [loading, setLoading] = useState(true);
+
+  const handleCancelOrder = async (orderId: string) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")) return;
+    try {
+      const res = await storeActions.cancelOrder(orderId);
+      if (res.ok) {
+        toast.success("Hủy đơn hàng thành công! 🛍️");
+        const data = await storeActions.fetchOrders();
+        setOrders(data);
+      } else {
+        toast.error(res.error);
+      }
+    } catch (err) {
+      toast.error("Có lỗi xảy ra khi hủy đơn hàng.");
+    }
+  };
 
   useEffect(() => {
     if (currentUser) {
@@ -157,7 +175,7 @@ function OrdersPage() {
                               </div>
                             </div>
                             <div className="text-right">
-                              <div className="text-xs font-bold text-foreground">{item.price}</div>
+                              <div className="text-xs font-bold text-foreground">{formatProductPrice(item.price)}</div>
                             </div>
                           </div>
                         ))}
@@ -179,14 +197,24 @@ function OrdersPage() {
                           </div>
                         </div>
 
-                        {/* Order Total */}
-                        <div className="text-right ml-auto flex items-center gap-4">
-                          <div className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/80 flex items-center gap-1">
-                            <ShieldCheck className="w-4 h-4 text-emerald-500" /> COD (Thanh toán khi nhận)
-                          </div>
-                          <div>
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tổng thanh toán</div>
-                            <div className="text-lg font-extrabold text-price">{formatPrice(order.totalAmount)}</div>
+                        {/* Order Total & Cancel Action */}
+                        <div className="flex flex-wrap items-center gap-5 ml-auto">
+                          {order.status === "PENDING" && (
+                            <button
+                              onClick={() => handleCancelOrder(order.id)}
+                              className="text-xs font-bold text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-4 py-2.5 rounded-lg transition duration-200"
+                            >
+                              Hủy đơn hàng
+                            </button>
+                          )}
+                          <div className="text-right flex items-center gap-4">
+                            <div className="text-[10px] font-extrabold uppercase tracking-widest text-muted-foreground/80 flex items-center gap-1">
+                              <ShieldCheck className="w-4 h-4 text-emerald-500" /> COD (Thanh toán khi nhận)
+                            </div>
+                            <div>
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Tổng thanh toán</div>
+                              <div className="text-lg font-extrabold text-price">{formatPrice(order.totalAmount)}</div>
+                            </div>
                           </div>
                         </div>
                       </div>

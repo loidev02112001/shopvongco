@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { 
   Heart, Plus, Minus, MessageCircle, Truck, 
   RotateCcw, ShieldCheck, Gift, Camera, Star, User as UserIcon
@@ -7,12 +7,56 @@ import {
 import { TopBar, NavBar, ProductCard, Footer } from "@/components/SiteChrome";
 import { getProduct, products } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import brandMission from "@/assets/brand-mission.jpg";
 import { toast } from "sonner";
+import { formatProductPrice } from "@/lib/utils";
 
 export const Route = createFileRoute("/san-pham/$slug")({
-  loader: ({ params }) => {
-    const product = getProduct(params.slug);
+  loader: async ({ params }) => {
+    let product = getProduct(params.slug);
+    
+    // Nếu chưa có sản phẩm cục bộ (đang load chậm), hãy truy vấn trực tiếp từ database online
+    if (!product && isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("slug", params.slug)
+          .maybeSingle();
+        
+        if (data && !error) {
+          let specsObj = data.specs;
+          if (typeof specsObj === "string") {
+            try {
+              specsObj = JSON.parse(specsObj);
+            } catch (e) {
+              console.error("Failed to parse specs JSON string:", e);
+            }
+          }
+          product = {
+            slug: data.slug,
+            img: data.img,
+            name: data.name,
+            shortName: data.short_name,
+            price: data.price !== null && data.price !== undefined ? String(data.price) : "",
+            description: data.description,
+            specs: specsObj,
+            info: data.info,
+            collectionId: data.collection_id || undefined,
+            images: Array.isArray(data.images) ? data.images : [],
+          };
+          
+          // Lưu vào mảng cục bộ
+          if (!products.some(p => p.slug === product!.slug)) {
+            products.push(product);
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi khi load sản phẩm trực tiếp từ database online:", err);
+      }
+    }
+    
     if (!product) throw notFound();
     return { product };
   },
@@ -37,39 +81,55 @@ function ProductDetail() {
   const { product } = Route.useLoaderData();
   const navigate = useNavigate();
   const [qty, setQty] = useState(1);
-  const [selectedSize, setSelectedSize] = useState("40cm + 5cm");
+  const sizeSpecs = product.specs?.["Độ dài dây"] || product.specs?.["Kích thước"] || "40cm + 5cm";
+  const sizeOptions = useMemo(() => {
+    return typeof sizeSpecs === "string" 
+      ? sizeSpecs.split(/[,|;]/).map(s => s.trim()).filter(Boolean)
+      : ["40cm + 5cm"];
+  }, [sizeSpecs]);
+
+  const [selectedSize, setSelectedSize] = useState(() => sizeOptions[0] || "40cm + 5cm");
+
+  useEffect(() => {
+    if (sizeOptions.length > 0) {
+      setSelectedSize(sizeOptions[0]);
+    }
+  }, [sizeOptions]);
   
   // Custom Product Gallery cho từng sản phẩm
   const [activeImgIndex, setActiveImgIndex] = useState(0);
+
+  useEffect(() => {
+    setActiveImgIndex(0);
+  }, [product.slug]);
+
   const productImages = useMemo(() => {
     const list = [product.img];
     
-    // Tìm các ảnh của sản phẩm cùng bộ sưu tập để làm ảnh chi tiết
-    const siblings = products
-      .filter((p) => p.collectionId === product.collectionId && p.slug !== product.slug)
-      .map((p) => p.img);
-      
-    const others = products
-      .filter((p) => p.slug !== product.slug)
-      .map((p) => p.img);
-
-    const combined = [...siblings, ...others];
-    for (let i = 0; i < combined.length && list.length < 4; i++) {
-      if (!list.includes(combined[i])) {
-        list.push(combined[i]);
-      }
+    // Nạp các hình ảnh phụ tùy chỉnh được thiết lập bởi Admin
+    if (product.images && Array.isArray(product.images)) {
+      product.images.forEach((imgUrl) => {
+        if (imgUrl && !list.includes(imgUrl)) {
+          list.push(imgUrl);
+        }
+      });
     }
+    
     return list;
   }, [product]);
 
-  const activeImg = productImages[activeImgIndex];
+  const activeImg = productImages[activeImgIndex] || product.img;
 
   // Store & Reviews integration
   const { reviews, currentUser, wishlist } = useStore();
   const isLiked = wishlist.includes(product.slug);
 
+  useEffect(() => {
+    storeActions.fetchReviews();
+  }, [product.slug]);
+
   const productReviews = useMemo(() => {
-    return reviews.filter((r) => r.productSlug === product.slug);
+    return reviews.filter((r) => r.productSlug === product.slug && !r.isHidden);
   }, [reviews, product.slug]);
 
   const avgRating = useMemo(() => {
@@ -99,7 +159,6 @@ function ProductDetail() {
     setUserRating(5);
   };
 
-  const sizeOptions = ["40cm + 5cm", "45cm + 5cm", "50cm + 5cm"];
   const featured = products.filter(p => p.slug !== product.slug).slice(0, 4);
 
   return (
@@ -137,29 +196,35 @@ function ProductDetail() {
               </div>
 
               {/* Price */}
-              <p className="mt-5 font-extrabold text-price font-sans" style={{fontSize: "clamp(26px, 3.5vw, 38px)"}}>{product.price}</p>
+              <p className="mt-5 font-extrabold text-price font-sans" style={{fontSize: "clamp(26px, 3.5vw, 38px)"}}>{formatProductPrice(product.price)}</p>
 
-              {/* Size Selector */}
-              <div className="mt-6">
-                <span className="text-xs text-brand font-bold uppercase tracking-wider block mb-2.5">
-                  Kích thước (Độ dài dây):
-                </span>
-                <div className="flex flex-wrap gap-2.5">
-                  {sizeOptions.map((sz) => (
-                    <button
-                      key={sz}
-                      onClick={() => setSelectedSize(sz)}
-                      className={`px-4.5 py-2 border rounded-full text-xs font-bold transition-all duration-200 ${
-                        selectedSize === sz
-                          ? "bg-brand text-brand-foreground border-brand shadow-sm"
-                          : "bg-white border-brand/35 text-brand hover:bg-brand-soft/50"
-                      }`}
-                    >
-                      {sz}
-                    </button>
-                  ))}
+              {/* Variant Selector (Độ dài dây) */}
+              {sizeOptions.length > 0 && (
+                <div className="mt-6 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Độ dài dây (Biến thể):</span>
+                    <span className="text-xs text-brand font-bold bg-brand-soft/75 px-2.5 py-0.5 rounded border border-brand/10">
+                      {selectedSize}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {sizeOptions.map((opt) => (
+                      <button
+                        key={opt}
+                        type="button"
+                        onClick={() => setSelectedSize(opt)}
+                        className={`px-4.5 py-2.5 rounded-xl text-xs font-bold border transition-all duration-300 cursor-pointer active:scale-95 flex items-center justify-center ${
+                          selectedSize === opt
+                            ? "bg-brand text-brand-foreground border-brand shadow-md shadow-brand/10 ring-2 ring-brand-soft/80"
+                            : "bg-white text-gray-700 border-gray-200 hover:border-brand/40 hover:text-brand hover:bg-brand-soft/10"
+                        }`}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Quantity Selector */}
               <div className="mt-6 border border-gray-200 rounded bg-white px-4 py-3 flex items-center w-full max-w-lg shadow-xs">
@@ -242,7 +307,15 @@ function ProductDetail() {
 
               {/* Dynamic Camera Try-On button */}
               <button
-                onClick={() => navigate({ to: "/thu-vong-co", search: { slug: product.slug } })}
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    localStorage.setItem("last-tryon-slug", product.slug);
+                  }
+                  navigate({
+                    to: "/thu-vong-co",
+                    search: { slug: product.slug, img: activeImg },
+                  });
+                }}
                 className="absolute bottom-0 left-0 right-0 bg-brand/85 text-brand-foreground text-sm font-bold text-center py-3.5 tracking-[0.2em] hover:bg-brand transition-colors w-full flex items-center justify-center gap-2 backdrop-blur-xs"
               >
                 <Camera className="w-4.5 h-4.5" /> THỬ VÒNG CỔ LIVE AR

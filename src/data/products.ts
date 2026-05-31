@@ -24,16 +24,10 @@ export type Product = {
   shortName: string;
   price: string;
   description: string;
-  specs: {
-    "Kiểu dáng": string;
-    "Chất liệu": string;
-    "Màu sắc": string;
-    "Độ dài dây": string;
-    "Kích thước": string;
-    "Cách bảo quản & chăm sóc": string;
-  };
+  specs: any;
   info: string;
   collectionId?: string;
+  images?: string[];
 };
 
 const sharedDescription =
@@ -339,29 +333,44 @@ export let products: Product[] = [...defaultProducts];
 export async function syncProductsWithCloud(): Promise<Product[]> {
   if (!isSupabaseConfigured()) {
     console.log("Supabase is not configured, running in local fallback mode for products.");
+    setTimeout(() => {
+      storeActions.setProductsLoaded(true);
+    }, 100);
     return products;
   }
 
   try {
     const { data: cloudProducts, error: fetchErr } = await supabase
       .from("products")
-      .select("*");
+      .select("*")
+      .order("created_at", { ascending: false });
 
     if (fetchErr) throw fetchErr;
 
     if (cloudProducts && cloudProducts.length > 0) {
       console.log(`Successfully fetched ${cloudProducts.length} products from Supabase online!`);
-      const mapped: Product[] = cloudProducts.map((p: any) => ({
-        slug: p.slug,
-        img: p.img,
-        name: p.name,
-        shortName: p.short_name,
-        price: p.price,
-        description: p.description,
-        specs: p.specs,
-        info: p.info,
-        collectionId: p.collection_id || undefined,
-      }));
+      const mapped: Product[] = cloudProducts.map((p: any) => {
+        let specsObj = p.specs;
+        if (typeof specsObj === "string") {
+          try {
+            specsObj = JSON.parse(specsObj);
+          } catch (e) {
+            console.error("Failed to parse specs JSON string:", e);
+          }
+        }
+        return {
+          slug: p.slug,
+          img: p.img,
+          name: p.name,
+          shortName: p.short_name,
+          price: p.price !== null && p.price !== undefined ? String(p.price) : "",
+          description: p.description,
+          specs: specsObj,
+          info: p.info,
+          collectionId: p.collection_id || undefined,
+          images: Array.isArray(p.images) ? p.images : [],
+        };
+      });
 
       // Mutate in-place để tất cả các file import giữ nguyên tham chiếu mảng
       products.length = 0;
@@ -369,7 +378,7 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
 
       // Kích hoạt re-render UI trên React an toàn ngoài chu kỳ render chính
       setTimeout(() => {
-        storeActions.triggerReRender();
+        storeActions.setProductsLoaded(true);
       }, 0);
       return products;
     } else {
@@ -380,45 +389,66 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
         img: p.img, // Lưu dạng đường dẫn/Base64 để đồng bộ hoàn hảo
         name: p.name,
         short_name: p.shortName,
-        price: p.price,
+        price: parseInt(String(p.price || "").replace(/[^\d]/g, ""), 10) || 0,
         description: p.description,
         specs: p.specs,
         info: p.info,
         collection_id: p.collectionId || null,
+        images: p.images || [],
       }));
 
       const { error: seedErr } = await supabase.from("products").insert(seedData);
       if (seedErr) {
         console.error("Failed to seed products to Supabase online:", seedErr);
+        setTimeout(() => {
+          storeActions.setProductsLoaded(true);
+        }, 0);
       } else {
         console.log("Successfully seeded 12 premium products to Supabase online!");
         
         // Fetch lại ngay sau khi Seed để nạp dữ liệu chuẩn
-        const { data: refetched } = await supabase.from("products").select("*");
+        const { data: refetched } = await supabase
+          .from("products")
+          .select("*")
+          .order("created_at", { ascending: false });
         if (refetched && refetched.length > 0) {
-          const mapped: Product[] = refetched.map((p: any) => ({
-            slug: p.slug,
-            img: p.img,
-            name: p.name,
-            shortName: p.short_name,
-            price: p.price,
-            description: p.description,
-            specs: p.specs,
-            info: p.info,
-            collectionId: p.collection_id || undefined,
-          }));
+          const mapped: Product[] = refetched.map((p: any) => {
+            let specsObj = p.specs;
+            if (typeof specsObj === "string") {
+              try {
+                specsObj = JSON.parse(specsObj);
+              } catch (e) {
+                console.error("Failed to parse specs JSON string:", e);
+              }
+            }
+            return {
+              slug: p.slug,
+              img: p.img,
+              name: p.name,
+              shortName: p.short_name,
+              price: p.price !== null && p.price !== undefined ? String(p.price) : "",
+              description: p.description,
+              specs: specsObj,
+              info: p.info,
+              collectionId: p.collection_id || undefined,
+              images: Array.isArray(p.images) ? p.images : [],
+            };
+          });
           products.length = 0;
           products.push(...mapped);
           
           // Kích hoạt re-render UI trên React an toàn ngoài chu kỳ render chính
           setTimeout(() => {
-            storeActions.triggerReRender();
+            storeActions.setProductsLoaded(true);
           }, 0);
         }
       }
     }
   } catch (err: any) {
     console.error("Error in syncProductsWithCloud:", err);
+    setTimeout(() => {
+      storeActions.setProductsLoaded(true);
+    }, 0);
   }
   return products;
 }
@@ -430,4 +460,4 @@ if (typeof window !== "undefined") {
   }, 100);
 }
 
-export const getProduct = (slug: string) => products.find((p) => p.slug === slug);
+export const getProduct = (slug: string) => products.find((p) => p?.slug?.toLowerCase() === slug?.toLowerCase());

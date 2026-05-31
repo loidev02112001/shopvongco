@@ -1,15 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Truck, RotateCcw, ShieldCheck, Gift, ChevronLeft, ChevronRight,
 } from "lucide-react";
-import { TopBar, NavBar, ProductCard, Footer } from "@/components/SiteChrome";
+import { TopBar, NavBar, ProductCard, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
 import brandMission from "@/assets/brand-mission.jpg";
 import collection1 from "@/assets/collection-1.png";
 import collection2 from "@/assets/collection-2.png";
 import collection3 from "@/assets/collection-3.png";
 import heroAr from "@/assets/hero-ar.png";
 import { products } from "@/data/products";
+import { useStore } from "@/lib/store";
 
 
 export const Route = createFileRoute("/")({
@@ -24,13 +25,150 @@ export const Route = createFileRoute("/")({
 
 
 function Hero() {
+  const { slides = [] } = useStore();
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Auto-play slides every 5 seconds
+  useEffect(() => {
+    if (slides.length <= 1 || isHovered) return;
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [slides.length, isHovered]);
+
+  if (slides.length === 0) {
+    return (
+      <section className="w-full">
+        <img
+          src={heroAr}
+          alt="Trải nghiệm thử thật trên AR — All the love"
+          className="block w-full h-auto"
+        />
+      </section>
+    );
+  }
+
+  const nextSlide = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentIdx((prev) => (prev + 1) % slides.length);
+  };
+
+  const prevSlide = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentIdx((prev) => (prev - 1 + slides.length) % slides.length);
+  };
+
   return (
-    <section className="w-full">
-      <img
-        src={heroAr}
-        alt="Trải nghiệm thử thật trên AR — All the love"
-        className="block w-full h-auto"
-      />
+    <section 
+      className="relative w-full overflow-hidden aspect-[21/9] sm:aspect-[3/1] bg-[#07090e]"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Slides container */}
+      <div className="w-full h-full relative">
+        {slides.map((slide, idx) => {
+          const isActive = idx === currentIdx;
+          return (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+              }`}
+            >
+              {/* Slide Image */}
+              <img
+                src={slide.image}
+                alt={slide.title || "Luna Jewel slide banner"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = heroAr;
+                }}
+              />
+              
+              {/* Editorial Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex items-center px-8 md:px-20">
+                <div className="max-w-xl text-left text-white space-y-3 md:space-y-4">
+                  {slide.title && (
+                    <span 
+                      className={`inline-block text-[9px] md:text-xs font-extrabold uppercase tracking-[0.25em] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full transform transition-all duration-700 delay-100 ${
+                        isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                      }`}
+                    >
+                      {slide.title}
+                    </span>
+                  )}
+                  
+                  {slide.subtitle && (
+                    <h2 
+                      className={`text-xl sm:text-2xl md:text-4xl lg:text-5xl font-light tracking-wide leading-tight text-white transform transition-all duration-700 delay-300 ${
+                        isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                      }`}
+                      style={{ fontFamily: "'Playfair Display', serif" }}
+                    >
+                      {slide.subtitle}
+                    </h2>
+                  )}
+
+                  {slide.link && (
+                    <div 
+                      className={`pt-2 md:pt-4 transform transition-all duration-700 delay-500 ${
+                        isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+                      }`}
+                    >
+                      <Link
+                        to={slide.link}
+                        className="inline-block border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black px-6 py-2.5 rounded-sm text-xs font-bold tracking-widest transition duration-300 uppercase shadow-lg shadow-amber-500/5 hover:shadow-amber-500/20"
+                      >
+                        XEM NGAY
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Navigation Arrows */}
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={prevSlide}
+            aria-label="Slide trước"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+          <button
+            onClick={nextSlide}
+            aria-label="Slide tiếp theo"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105"
+          >
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        </>
+      )}
+
+      {/* Dot Indicators */}
+      {slides.length > 1 && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2.5">
+          {slides.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentIdx(idx)}
+              aria-label={`Đi tới slide ${idx + 1}`}
+              className={`h-1.5 rounded-full transition-all duration-500 cursor-pointer ${
+                idx === currentIdx 
+                  ? "w-8 bg-amber-500" 
+                  : "w-2 bg-white/40 hover:bg-white/70"
+              }`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -61,17 +199,15 @@ function Benefits() {
 }
 
 function NewProducts() {
-  const newProducts = [
-    products.find((p) => p.slug === "thien-nga-graceful-swan")!,
-    products.find((p) => p.slug === "twin-hearts-knot")!,
-    products.find((p) => p.slug === "ngan-hoa-baguette-bloom")!,
-    products.find((p) => p.slug === "pure-soul-pink-heart-halo")!,
-  ];
+  const { isProductsLoaded } = useStore();
+  const newProducts = products.slice(0, 4);
   return (
     <section className="max-w-7xl mx-auto px-6 mt-12">
       <h2 className="t-h-main text-center text-brand tracking-wide">SẢN PHẨM MỚI</h2>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
-        {newProducts.map((p) => <ProductCard key={p.name} {...p} />)}
+        {!isProductsLoaded
+          ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
+          : newProducts.map((p) => p && <ProductCard key={p.slug} {...p} />)}
       </div>
       <div className="flex justify-center mt-8">
         <Link
@@ -107,9 +243,10 @@ function Collection() {
 }
 
 function BrandMission() {
+  const { isProductsLoaded } = useStore();
   const [idx, setIdx] = useState(0);
   const pageSize = 2;
-  const totalPages = Math.ceil(products.length / pageSize);
+  const totalPages = Math.ceil(products.length / pageSize) || 1;
   const safeIdx = ((idx % totalPages) + totalPages) % totalPages;
   const start = safeIdx * pageSize;
   const visible = products.slice(start, start + pageSize);
@@ -133,7 +270,9 @@ function BrandMission() {
           </p>
           <div className="mt-6 relative">
             <div className="grid grid-cols-2 gap-4">
-              {visible.map((p) => <ProductCard key={p.name} {...p} />)}
+              {!isProductsLoaded
+                ? Array.from({ length: 2 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                : visible.map((p) => <ProductCard key={p.name} {...p} />)}
             </div>
             <button onClick={() => setIdx((i) => i - 1)} aria-label="Sản phẩm trước"
               className="absolute -left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white shadow flex items-center justify-center text-brand">
