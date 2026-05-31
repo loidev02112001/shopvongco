@@ -183,13 +183,16 @@ function Benefits() {
   ];
   return (
     <section className="max-w-7xl mx-auto px-6 mt-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {items.map(({ icon: Icon, title, sub }) => (
-          <div key={title} className="flex items-center gap-3 rounded-full px-4 py-3 bg-brand text-brand-foreground">
-            <Icon className="w-7 h-7 shrink-0" strokeWidth={1.5} />
-            <div>
-              <div className="text-xs font-semibold">{title}</div>
-              <div className="text-[11px] opacity-90">{sub}</div>
+          <div
+            key={title}
+            className="flex items-center justify-center gap-2.5 rounded-[12px] px-3.5 py-2.5 bg-brand text-brand-foreground shadow-xs"
+          >
+            <Icon className="w-[38px] h-[38px] shrink-0" strokeWidth={1.2} />
+            <div className="leading-tight min-w-0">
+              <p className="text-[13px] md:text-[14px] font-bold truncate">{title}</p>
+              <p className="text-[10px] md:text-[11px] opacity-90 truncate">{sub}</p>
             </div>
           </div>
         ))}
@@ -224,19 +227,33 @@ function NewProducts() {
 }
 
 function Collection() {
+  const { collections = [] } = useStore();
+  const visibleCollections = collections.filter((c) => c.isVisible).slice(0, 3);
+
   return (
     <section className="max-w-7xl mx-auto px-6 mt-14">
       <h2 className="t-h-main text-center text-brand tracking-wide">BỘ SƯU TẬP</h2>
-      <div className="grid grid-cols-3 gap-5 mt-8">
-        <div className="aspect-[4/3] bg-muted rounded-sm overflow-hidden">
-          <img src={collection1} alt="Quà tặng ngày kỷ niệm tình yêu" loading="lazy" className="w-full h-full object-contain" />
-        </div>
-        <div className="aspect-[4/3] bg-muted rounded-sm overflow-hidden">
-          <img src={collection2} alt="Trang sức cặp đôi" loading="lazy" className="w-full h-full object-contain" />
-        </div>
-        <div className="aspect-[4/3] bg-muted rounded-sm overflow-hidden">
-          <img src={collection3} alt="Quà tặng sinh nhật bạn gái" loading="lazy" className="w-full h-full object-contain" />
-        </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+        {visibleCollections.map((c) => (
+          <Link
+            key={c.id}
+            to="/bo-suu-tap"
+            search={{ collection: c.id }}
+            className="group relative aspect-[4/3] bg-muted rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow block"
+          >
+            <img
+              src={c.thumbnail}
+              alt={c.name}
+              loading="lazy"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-5">
+              <span className="text-white font-bold text-base md:text-lg tracking-wide uppercase drop-shadow-sm">
+                {c.name}
+              </span>
+            </div>
+          </Link>
+        ))}
       </div>
     </section>
   );

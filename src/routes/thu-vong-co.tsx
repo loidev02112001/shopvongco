@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import charms from "@/assets/tryon-charms.jpg";
 import heart from "@/assets/tryon-heart.jpg";
-import real1 from "@/assets/tryon-real-1.jpg";
-import real2 from "@/assets/tryon-real-2.jpg";
-import store from "@/assets/tryon-store.jpg";
+import realProduct1 from "@/assets/real-product-1.jpg";
+import realProduct2 from "@/assets/real-product-2.jpg";
+import realProduct3 from "@/assets/real-product-3.jpg";
 import arBanner from "@/assets/tryon-ar-banner.png";
 
 type TryOnSearch = { slug?: string; img?: string };
@@ -84,12 +84,12 @@ function ThuVongCoPage() {
           {badges.map((b) => (
             <div
               key={b.title}
-              className="flex items-center gap-3 rounded-full px-4 py-3 bg-brand text-brand-foreground"
+              className="flex items-center justify-center gap-2.5 rounded-[12px] px-3.5 py-2.5 bg-brand text-brand-foreground shadow-xs"
             >
-              <b.icon className="w-6 h-6 shrink-0" strokeWidth={1.5} />
-              <div className="text-xs leading-tight">
-                <p className="font-bold">{b.title}</p>
-                <p className="opacity-90">{b.sub}</p>
+              <b.icon className="w-[38px] h-[38px] shrink-0" strokeWidth={1.2} />
+              <div className="leading-tight min-w-0">
+                <p className="text-[13px] md:text-[14px] font-bold truncate">{b.title}</p>
+                <p className="text-[10px] md:text-[11px] opacity-90 truncate">{b.sub}</p>
               </div>
             </div>
           ))}
@@ -169,25 +169,25 @@ function ThuVongCoPage() {
         </h2>
         <div className="mt-8 grid md:grid-cols-2 gap-4">
           <img
-            src={real1}
-            alt="Sản phẩm thực tế — charm khắc thông điệp"
+            src={realProduct1}
+            alt="Sản phẩm thực tế — Bộ trang sức vòng cổ & bông tai cỏ bốn lá Luna Jewel"
             loading="lazy"
             width={900}
-            height={700}
+            height={900}
             className="w-full h-72 md:h-96 object-cover rounded-lg"
           />
           <img
-            src={real2}
-            alt="Sản phẩm thực tế — vòng tay hộp quà"
+            src={realProduct2}
+            alt="Sản phẩm thực tế — Vòng cổ cỏ bốn lá đeo trên cổ"
             loading="lazy"
             width={900}
-            height={700}
+            height={900}
             className="w-full h-72 md:h-96 object-cover rounded-lg"
           />
         </div>
         <img
-          src={store}
-          alt="Cửa hàng LUNA JEWEL"
+          src={realProduct3}
+          alt="Banner ưu đãi giảm giá Luna Jewel — Giảm giá lên đến 20%"
           loading="lazy"
           width={1600}
           height={600}
@@ -197,10 +197,10 @@ function ThuVongCoPage() {
 
       {/* CTA strip */}
       <section className="max-w-7xl mx-auto px-6 mt-10">
-        <div className="group flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-brand/20 py-6 px-5 rounded-xl bg-brand-soft/30 hover:shadow-md cursor-pointer transition-all duration-300">
+        <div className="group flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-brand/20 py-8 px-7 rounded-xl bg-brand-soft/30 hover:shadow-md cursor-pointer transition-all duration-300">
           <div>
-            <p className="text-sm font-bold text-brand tracking-wider">LUNA JEWEL CLUB</p>
-            <p className="text-xs text-foreground/70 mt-1.5 font-medium">
+            <p className="text-lg md:text-xl font-bold text-brand tracking-wider">LUNA JEWEL CLUB</p>
+            <p className="text-sm md:text-base text-foreground/70 mt-2 font-medium">
               Nhận ưu đãi 10% cho khách hàng mới đăng ký tài khoản thành viên Luna Jewel
             </p>
           </div>
@@ -209,7 +209,7 @@ function ThuVongCoPage() {
             onClick={() => {
               navigate({ to: "/tai-khoan" });
             }}
-            className="bg-brand text-brand-foreground px-8 py-3 text-xs font-bold tracking-wider transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 rounded"
+            className="bg-brand text-brand-foreground px-10 py-3.5 text-sm font-bold tracking-wider transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 rounded"
           >
             ĐĂNG KÝ NGAY
           </button>

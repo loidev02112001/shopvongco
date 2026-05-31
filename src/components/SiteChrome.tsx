@@ -463,19 +463,19 @@ function ProductCardInner({
 
 export function Footer() {
   return (
-    <footer className="mt-20" style={{ backgroundColor: "#C8C8C8" }}>
+    <footer className="mt-20 bg-brand-soft border-t border-brand/20">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
         {/* Chính Sách */}
         <div>
-          <h4 className="font-bold mb-4 text-sm" style={{ color: "#000000" }}>
+          <h4 className="font-bold mb-4 text-sm text-brand">
             Chính Sách
           </h4>
-          <ul className="space-y-2" style={{ color: "#000000" }}>
+          <ul className="space-y-2 text-foreground/80 font-medium">
             <li>
               <Link
                 to="/dich-vu"
                 search={{ muc: "bao-mat" }}
-                className="hover:text-gray-700 transition"
+                className="hover:text-brand transition-colors duration-200"
               >
                 Chính sách bảo mật
               </Link>
@@ -484,7 +484,7 @@ export function Footer() {
               <Link
                 to="/dich-vu"
                 search={{ muc: "bao-hanh" }}
-                className="hover:text-gray-700 transition"
+                className="hover:text-brand transition-colors duration-200"
               >
                 Chính sách bảo hành
               </Link>
@@ -493,7 +493,7 @@ export function Footer() {
               <Link
                 to="/dich-vu"
                 search={{ muc: "doi-tra" }}
-                className="hover:text-gray-700 transition"
+                className="hover:text-brand transition-colors duration-200"
               >
                 Chính sách đổi trả
               </Link>
@@ -502,7 +502,7 @@ export function Footer() {
               <Link
                 to="/dich-vu"
                 search={{ muc: "van-chuyen" }}
-                className="hover:text-gray-700 transition"
+                className="hover:text-brand transition-colors duration-200"
               >
                 Chính sách vận chuyển
               </Link>
@@ -511,22 +511,22 @@ export function Footer() {
         </div>
         {/* Hỗ trợ */}
         <div>
-          <h4 className="font-bold mb-4 text-sm" style={{ color: "#000000" }}>
+          <h4 className="font-bold mb-4 text-sm text-brand">
             Hỗ trợ
           </h4>
-          <ul className="space-y-2" style={{ color: "#000000" }}>
+          <ul className="space-y-2 text-foreground/80 font-medium">
             <li>
-              <Link to="/dieu-khoan-dich-vu" className="hover:text-gray-700 transition">
+              <Link to="/dieu-khoan-dich-vu" className="hover:text-brand transition-colors duration-200">
                 Điều khoản dịch vụ
               </Link>
             </li>
             <li>
-              <Link to="/huong-dan-mua-hang" className="hover:text-gray-700 transition">
+              <Link to="/huong-dan-mua-hang" className="hover:text-brand transition-colors duration-200">
                 Hướng dẫn mua hàng
               </Link>
             </li>
             <li>
-              <Link to="/huong-dan-thanh-toan" className="hover:text-gray-700 transition">
+              <Link to="/huong-dan-thanh-toan" className="hover:text-brand transition-colors duration-200">
                 Hướng dẫn thanh toán
               </Link>
             </li>
@@ -534,10 +534,10 @@ export function Footer() {
         </div>
         {/* Thông tin liên hệ */}
         <div>
-          <h4 className="font-bold mb-4 text-sm" style={{ color: "#000000" }}>
+          <h4 className="font-bold mb-4 text-sm text-brand">
             Thông tin liên hệ
           </h4>
-          <ul className="space-y-2" style={{ color: "#000000" }}>
+          <ul className="space-y-2 text-foreground/80 font-medium">
             <li>
               Đại học FPT, Khu CNC Hòa Lạc,
               <br />
@@ -549,53 +549,46 @@ export function Footer() {
         </div>
         {/* Đăng Kí Nhận Tin */}
         <div>
-          <h4 className="font-bold mb-4 text-sm" style={{ color: "#000000" }}>
+          <h4 className="font-bold mb-4 text-sm text-brand">
             Đăng Kí Nhận Tin
           </h4>
           <NewsletterForm />
-          <div className="flex gap-2 mt-4">
+          <div className="flex gap-2.5 mt-4">
             <a
               href="https://facebook.com"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition"
-              style={{ backgroundColor: "#3b5998" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-black hover:bg-brand text-white transition-colors duration-300 shadow-sm"
             >
-              <Facebook className="w-4 h-4 text-white" />
+              <Facebook className="w-4 h-4" />
             </a>
             <a
               href="https://instagram.com"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition"
-              style={{
-                background:
-                  "radial-gradient(circle at 30% 107%, #fdf497 0%, #fdf497 5%, #fd5949 45%, #d6249f 60%, #285AEB 90%)",
-              }}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-black hover:bg-brand text-white transition-colors duration-300 shadow-sm"
             >
-              <Instagram className="w-4 h-4 text-white" />
+              <Instagram className="w-4 h-4" />
             </a>
             <a
               href="https://youtube.com"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Youtube"
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition"
-              style={{ backgroundColor: "#FF0000" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-black hover:bg-brand text-white transition-colors duration-300 shadow-sm"
             >
-              <Youtube className="w-4 h-4 text-white" />
+              <Youtube className="w-4 h-4" />
             </a>
             <a
               href="https://tiktok.com"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition"
-              style={{ backgroundColor: "#010101", border: "1px solid #333" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-black hover:bg-brand text-white transition-colors duration-300 shadow-sm"
             >
-              <svg className="w-4 h-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z" />
               </svg>
             </a>
@@ -604,17 +597,15 @@ export function Footer() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Website"
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition"
-              style={{ backgroundColor: "#555" }}
+              className="w-8 h-8 rounded-full flex items-center justify-center bg-black hover:bg-brand text-white transition-colors duration-300 shadow-sm"
             >
-              <Globe className="w-4 h-4 text-white" />
+              <Globe className="w-4 h-4" />
             </a>
           </div>
         </div>
       </div>
       <div
-        className="py-3 text-center text-xs"
-        style={{ backgroundColor: "#6B6B6B", color: "#fff" }}
+        className="py-3 text-center text-xs font-semibold bg-brand text-brand-foreground"
       >
         © {new Date().getFullYear()} Luna Jewel. All rights reserved.
       </div>

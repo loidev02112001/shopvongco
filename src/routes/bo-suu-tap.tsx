@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, SlidersHorizontal, X, Search as SearchIcon, AlertCircle, ArrowLeft } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, X, Search as SearchIcon, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { TopBar, NavBar, ProductCard, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
 import { products as baseProducts, type Product } from "@/data/products";
 import collection1 from "@/assets/collection-1.png";
@@ -75,7 +75,8 @@ const priceToNumber = (p: any) => {
 
 function applyFilters(
   items: Product[],
-  { q, sort, color, collection, material, size, priceRange }: Search
+  { q, sort, color, collection, material, size, priceRange }: Search,
+  collections: Collection[]
 ): Product[] {
   let out = items.slice();
 
@@ -84,7 +85,8 @@ function applyFilters(
     const needle = q.toLowerCase();
     out = out.filter((p) => {
       if (!p) return false;
-      const colName = p.collectionId ? (COLLECTIONS_DETAILS[p.collectionId]?.name || "").toLowerCase() : "";
+      const col = p.collectionId ? collections.find((c) => c.id === p.collectionId) : null;
+      const colName = col ? (col.name || "").toLowerCase() : "";
       return (
         (p.name || "").toLowerCase().includes(needle) ||
         (p.shortName || "").toLowerCase().includes(needle) ||
@@ -249,7 +251,7 @@ function FilterBar() {
         <Dropdown
           label={
             search.collection
-              ? `BST: ${COLLECTIONS_DETAILS[search.collection]?.name || search.collection}`
+              ? `BST: ${collections.find((c) => c.id === search.collection)?.name || search.collection}`
               : "BỘ SƯU TẬP"
           }
           open={openDropdown === "collection"}
@@ -265,14 +267,14 @@ function FilterBar() {
           >
             Tất cả bộ sưu tập
           </DropdownItem>
-          {Object.entries(COLLECTIONS_DETAILS).map(([id, col]) => (
+          {collections.map((col) => (
             <DropdownItem
-              key={id}
+              key={col.id}
               onClick={() => {
-                update({ collection: id });
+                update({ collection: col.id });
                 setOpenDropdown(null);
               }}
-              isSelected={search.collection === id}
+              isSelected={search.collection === col.id}
             >
               {col.name}
             </DropdownItem>
@@ -485,7 +487,7 @@ function FilterBar() {
           )}
           {search.collection && (
             <FilterTag
-              label={`BST: ${COLLECTIONS_DETAILS[search.collection]?.name || search.collection}`}
+              label={`BST: ${collections.find((c) => c.id === search.collection)?.name || search.collection}`}
               onRemove={() => update({ collection: undefined })}
             />
           )}
@@ -649,7 +651,42 @@ function CollectionPage() {
   const { collections, isProductsLoaded } = useStore();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const filtered = useMemo(() => applyFilters(baseProducts, search), [search]);
+  const filtered = useMemo(() => applyFilters(baseProducts, search, collections), [search, collections]);
+
+  // Exception Flow E1: Collection not found (Mã bộ sưu tập trong URL không hợp lệ)
+  const isCollectionInvalid = useMemo(() => {
+    return search.collection && !collections.some((c) => c.id === search.collection);
+  }, [search.collection, collections]);
+
+  const currentCollectionDetail = useMemo(() => {
+    return search.collection ? collections.find((c) => c.id === search.collection) : null;
+  }, [search.collection, collections]);
+
+  const visibleCollections = useMemo(() => {
+    return collections.filter((c) => c.isVisible);
+  }, [collections]);
+
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Sync slide index with the active query collection selection
+  useEffect(() => {
+    if (search.collection) {
+      const idx = visibleCollections.findIndex((c) => c.id === search.collection);
+      if (idx !== -1) {
+        setCurrentIdx(idx);
+      }
+    }
+  }, [search.collection, visibleCollections]);
+
+  // Autoplay slideshow every 5 seconds (only if not hovered)
+  useEffect(() => {
+    if (visibleCollections.length <= 1 || isHovered) return;
+    const timer = setInterval(() => {
+      setCurrentIdx((prev) => (prev + 1) % visibleCollections.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [visibleCollections.length, isHovered]);
 
   // Scroll to hash after render (for navigation anchoring)
   useEffect(() => {
@@ -668,7 +705,7 @@ function CollectionPage() {
         <NavBar />
         
         {/* Banner Skeleton */}
-        <section className="w-full bg-slate-100/50 animate-pulse h-[250px] sm:h-[400px]" />
+        <section className="w-full bg-slate-100/50 animate-pulse aspect-[21/9] sm:aspect-[3/1]" />
 
         <section className="max-w-7xl mx-auto px-6 py-12">
           {/* Filter Bar Skeleton */}
@@ -701,9 +738,6 @@ function CollectionPage() {
     );
   }
 
-  // Exception Flow E1: Collection not found (Mã bộ sưu tập trong URL không hợp lệ)
-  const isCollectionInvalid = search.collection && !COLLECTIONS_DETAILS[search.collection];
-
   if (isCollectionInvalid) {
     return (
       <div className="min-h-screen bg-white">
@@ -729,8 +763,6 @@ function CollectionPage() {
   const isSearchActive = !!(search.q || search.color || search.material || search.size || search.priceRange);
   const isSingleCollectionMode = !!search.collection;
 
-  const currentCollectionDetail = search.collection ? COLLECTIONS_DETAILS[search.collection] : null;
-
   // Lựa chọn ảnh banner chính động: Nếu đang xem 1 BST riêng biệt thì dùng banner riêng, nếu không dùng banner chung Luna Jewel
   const activeHeroBanner = currentCollectionDetail ? currentCollectionDetail.banner : caraLunaBanner;
 
@@ -739,22 +771,94 @@ function CollectionPage() {
       <TopBar />
       <NavBar />
 
-      {/* Hero Banner Section (Cập nhật banner riêng biệt cho từng Collection theo UC34) */}
-      <section className="w-full relative overflow-hidden">
-        <img
-          src={activeHeroBanner}
-          alt={currentCollectionDetail ? currentCollectionDetail.title : "Bạc Ý 925 chuẩn định lượng — Luna Jewel"}
-          className="block w-full h-auto object-cover max-h-[350px] sm:max-h-[500px]"
-        />
-        {!currentCollectionDetail && (
-          <Link
-            to="/gioi-thieu"
-            aria-label="Tìm hiểu thêm về Luna Jewel"
-            className="absolute left-1/2 -translate-x-1/2 bg-white border border-brand/50 text-brand hover:bg-brand hover:text-brand-foreground transition-all duration-300 px-5 md:px-7 py-2 md:py-2.5 text-xs md:text-sm font-semibold tracking-wider whitespace-nowrap shadow-md hover:shadow-lg rounded"
-            style={{ top: "60%" }}
-          >
-            TÌM HIỂU THÊM VỀ LUNA JEWEL
-          </Link>
+      {/* Dynamic Collection Hero Slider */}
+      <section
+        className="relative w-full overflow-hidden aspect-[21/9] sm:aspect-[3/1] bg-[#07090e] group"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <div className="w-full h-full relative">
+          {visibleCollections.map((c, idx) => {
+            const isActive = idx === currentIdx;
+            return (
+              <div
+                key={c.id}
+                className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
+                  isActive ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"
+                }`}
+              >
+                {/* Banner Image */}
+                <img
+                  src={c.banner}
+                  alt={c.title}
+                  className="w-full h-full object-cover"
+                />
+                
+                {/* Luxury Editorial Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/45 to-transparent flex items-center px-6 md:px-20">
+                  <div className="max-w-xl text-left text-white space-y-2 md:space-y-3">
+                    <span className="inline-block text-[9px] md:text-xs font-extrabold uppercase tracking-[0.25em] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full">
+                      BỘ SƯU TẬP
+                    </span>
+                    <h2
+                      className="text-lg sm:text-2xl md:text-4xl lg:text-5xl font-light tracking-wide leading-tight text-white font-display"
+                    >
+                      {c.name}
+                    </h2>
+                    <p className="text-xs md:text-sm text-white/80 line-clamp-2 sm:line-clamp-3 leading-relaxed max-w-lg hidden sm:block">
+                      {c.intro}
+                    </p>
+                    <div className="pt-2 md:pt-4">
+                      <button
+                        onClick={() => navigate({ search: (prev: any) => ({ ...prev, collection: c.id }) })}
+                        className="inline-block border border-amber-500 text-amber-500 hover:bg-amber-500 hover:text-black px-5 md:px-6 py-2 rounded-sm text-[10px] md:text-xs font-bold tracking-widest transition duration-300 uppercase shadow-lg shadow-amber-500/5 hover:shadow-amber-500/20 cursor-pointer"
+                      >
+                        KHÁM PHÁ NGAY
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Navigation Arrows */}
+        {visibleCollections.length > 1 && (
+          <>
+            <button
+              onClick={() => setCurrentIdx((prev) => (prev - 1 + visibleCollections.length) % visibleCollections.length)}
+              aria-label="Slide trước"
+              className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 md:w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105 opacity-0 group-hover:opacity-100"
+            >
+              <ChevronLeft className="w-4 h-4 md:w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setCurrentIdx((prev) => (prev + 1) % visibleCollections.length)}
+              aria-label="Slide tiếp theo"
+              className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-8 h-8 md:w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105 opacity-0 group-hover:opacity-100"
+            >
+              <ChevronRight className="w-4 h-4 md:w-5 h-5" />
+            </button>
+          </>
+        )}
+
+        {/* Dot Indicators */}
+        {visibleCollections.length > 1 && (
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {visibleCollections.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={() => setCurrentIdx(idx)}
+                aria-label={`Đi tới slide ${idx + 1}`}
+                className={`h-1 rounded-full transition-all duration-500 cursor-pointer ${
+                  idx === currentIdx 
+                    ? "w-6 bg-amber-500" 
+                    : "w-2.5 bg-white/40 hover:bg-white/70"
+                }`}
+              />
+            ))}
+          </div>
         )}
       </section>
 
@@ -765,48 +869,25 @@ function CollectionPage() {
           <>
             <h2 className="t-h-main text-center text-brand tracking-wide mt-14 uppercase">Các Bộ Sưu Tập Nổi Bật</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-              <button 
-                onClick={() => navigate({ search: { collection: "graceful-muse" } })}
-                className="group relative aspect-[4/3] bg-muted rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left"
-              >
-                <img
-                  src={collection1}
-                  alt="Quà tặng ngày kỷ niệm tình yêu"
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                  <span className="text-white font-semibold text-sm">Kỷ Niệm Tình Yêu</span>
-                </div>
-              </button>
-              <button 
-                onClick={() => navigate({ search: { collection: "huong-sac-mua-he" } })}
-                className="group relative aspect-[4/3] bg-muted rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left"
-              >
-                <img
-                  src={collection2}
-                  alt="Trang sức cặp đôi"
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                  <span className="text-white font-semibold text-sm">Trang Sức Cặp Đôi</span>
-                </div>
-              </button>
-              <button 
-                onClick={() => navigate({ search: { collection: "thanh-nha-ngan-hoa" } })}
-                className="group relative aspect-[4/3] bg-muted rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left"
-              >
-                <img
-                  src={collection3}
-                  alt="Quà tặng sinh nhật bạn gái"
-                  loading="lazy"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent flex items-end p-4">
-                  <span className="text-white font-semibold text-sm">Quà Tặng Sinh Nhật</span>
-                </div>
-              </button>
+              {collections.filter(c => c.isVisible).slice(0, 3).map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => navigate({ search: { collection: c.id } })}
+                  className="group relative aspect-[4/3] bg-muted rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow text-left cursor-pointer"
+                >
+                  <img
+                    src={c.thumbnail}
+                    alt={c.name}
+                    loading="lazy"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-5">
+                    <span className="text-white font-bold text-base md:text-lg tracking-wide uppercase drop-shadow-sm">
+                      {c.name}
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
           </>
         )}
@@ -904,28 +985,28 @@ function CollectionPage() {
             <CollectionSection
               id="graceful-muse"
               title="The Graceful Muse - Nàng Thơ Thanh Lịch"
-              intro={COLLECTIONS_DETAILS["graceful-muse"]?.intro}
+              intro={collections.find((c) => c.id === "graceful-muse")?.intro}
               products={filtered.filter((p) => p.collectionId === "graceful-muse")}
             />
 
             <CollectionSection
               id="huong-sac-mua-he"
               title="Hương Sắc Mùa Hè"
-              intro={COLLECTIONS_DETAILS["huong-sac-mua-he"]?.intro}
+              intro={collections.find((c) => c.id === "huong-sac-mua-he")?.intro}
               products={filtered.filter((p) => p.collectionId === "huong-sac-mua-he")}
             />
 
             <CollectionSection
               id="thanh-nha-ngan-hoa"
               title="Thanh Nhã Ngân Hoa"
-              intro={COLLECTIONS_DETAILS["thanh-nha-ngan-hoa"]?.intro}
+              intro={collections.find((c) => c.id === "thanh-nha-ngan-hoa")?.intro}
               products={filtered.filter((p) => p.collectionId === "thanh-nha-ngan-hoa")}
             />
 
             <CollectionSection
               id="pure-soul"
               title="Pure Soul - Tâm Hồn Thuần Khiết"
-              intro={COLLECTIONS_DETAILS["pure-soul"]?.intro}
+              intro={collections.find((c) => c.id === "pure-soul")?.intro}
               products={filtered.filter((p) => p.collectionId === "pure-soul")}
             />
           </>

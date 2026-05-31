@@ -393,18 +393,21 @@ function ProductDetail() {
           Là thương hiệu hàng đầu trong lĩnh vực trang sức bạc, Luna Jewel mang tới các sản phẩm thiết kế đẹp mắt, chất lượng tốt nhất và phù hợp cho từng yêu cầu của khách hàng.
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
           {[
             { icon: Truck, title: "MIỄN PHÍ vận chuyển", sub: "Đơn Hàng từ 950.000 VNĐ" },
             { icon: RotateCcw, title: "Đổi trả MIỄN PHÍ", sub: "Trong vòng 30 NGÀY" },
             { icon: ShieldCheck, title: "Dịch vụ BẢO HÀNH", sub: "Làm mới TRỌN ĐỜI" },
             { icon: Gift, title: "Túi & hộp TRANG NHÃ", sub: "Sẵn sàng TRAO TẶNG" },
           ].map(({ icon: Icon, title, sub }) => (
-            <div key={title} className="flex items-center gap-3 rounded-xl px-4 py-4 bg-brand text-brand-foreground shadow-xs">
-              <Icon className="w-8 h-8 shrink-0" strokeWidth={1.5} />
-              <div>
-                <div className="text-xs font-bold leading-tight">{title}</div>
-                <div className="text-[10px] opacity-90 mt-1">{sub}</div>
+            <div
+              key={title}
+              className="flex items-center justify-center gap-2.5 rounded-[12px] px-3.5 py-2.5 bg-brand text-brand-foreground shadow-xs"
+            >
+              <Icon className="w-[38px] h-[38px] shrink-0" strokeWidth={1.2} />
+              <div className="leading-tight min-w-0">
+                <p className="text-[13px] md:text-[14px] font-bold truncate">{title}</p>
+                <p className="text-[10px] md:text-[11px] opacity-90 truncate">{sub}</p>
               </div>
             </div>
           ))}
