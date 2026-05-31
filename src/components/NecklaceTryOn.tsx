@@ -11,10 +11,12 @@ import {
   Download,
   RefreshCw,
   AlertCircle,
+  ShoppingCart,
 } from "lucide-react";
 import { products, syncProductsWithCloud } from "@/data/products";
 import { toast } from "sonner";
-import { useStore } from "@/lib/store";
+import { useStore, storeActions } from "@/lib/store";
+import { useNavigate } from "@tanstack/react-router";
 
 type Necklace = {
   id: string;
@@ -427,6 +429,18 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
   const [offsetX, setOffsetX] = useState(0);
   const [rotation, setRotation] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const navigate = useNavigate();
+
+  const handleAddToCart = useCallback((necklace: Necklace) => {
+    storeActions.addToCart(necklace.id, 1);
+    toast.success(`Đã thêm "${necklace.name}" vào giỏ hàng!`);
+  }, []);
+
+  const handleBuyNow = useCallback((necklace: Necklace) => {
+    storeActions.addToCart(necklace.id, 1);
+    navigate({ to: "/gio-hang" });
+  }, [navigate]);
 
   // Thuật toán khởi tạo MediaPipe
   useEffect(() => {
@@ -1883,8 +1897,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
                 {necklaces.map((n) => {
                   const active = selected?.id === n.id;
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={n.id}
                       onClick={() => {
                         forcedInitImageRef.current = null;
@@ -1895,8 +1908,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
                           stopCamera();
                         }
                       }}
-                      aria-pressed={active && userPicked}
-                      className={`group relative rounded-lg overflow-hidden border bg-white text-left transition-all duration-200 flex flex-col ${
+                      className={`group relative rounded-lg overflow-hidden border bg-white text-left transition-all duration-200 flex flex-col cursor-pointer ${
                         active && userPicked
                           ? "border-brand ring-2 ring-brand/40 shadow-md"
                           : "border-brand/15 hover:border-brand/50 shadow-2xs"
@@ -1920,12 +1932,39 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
                         ĐANG THỬ AR
                       </div>
                       <div className="p-3 flex flex-col gap-1.5 flex-1 justify-between">
-                        <p className="text-[11px] leading-snug font-semibold text-foreground/80 line-clamp-2 min-h-[2.6em]">
-                          {n.name}
-                        </p>
-                        <p className="text-sm font-extrabold text-price">{n.price}</p>
+                        <div>
+                          <p className="text-[11px] leading-snug font-semibold text-foreground/80 line-clamp-2 min-h-[2.6em]">
+                            {n.name}
+                          </p>
+                          <p className="text-sm font-extrabold text-price mt-1">{n.price}</p>
+                        </div>
+                        
+                        {/* Buy & Cart Buttons (UC35) */}
+                        <div className="flex gap-1.5 pt-2 mt-auto border-t border-slate-100/60">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(n);
+                            }}
+                            title="Thêm vào giỏ hàng"
+                            className="w-10 h-8 flex items-center justify-center bg-brand/10 hover:bg-brand text-brand hover:text-brand-foreground rounded transition-all cursor-pointer border border-brand/5"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBuyNow(n);
+                            }}
+                            className="flex-1 h-8 flex items-center justify-center bg-price hover:bg-price/90 text-white text-[10.5px] font-extrabold rounded transition-all uppercase tracking-wider cursor-pointer shadow-2xs active:scale-[0.98]"
+                          >
+                            Mua Ngay
+                          </button>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
