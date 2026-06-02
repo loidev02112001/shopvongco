@@ -324,7 +324,7 @@ export const defaultProducts: Product[] = [
   },
 ];
 
-export let products: Product[] = [...defaultProducts];
+export let products: Product[] = isSupabaseConfigured() ? [] : [...defaultProducts];
 
 const PRODUCT_LIST_COLUMNS =
   "slug,img,name,short_name,price,description,specs,info,collection_id,created_at";
@@ -385,67 +385,12 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
       }, 0);
       return products;
     } else {
-      console.log("Supabase products table is empty. Starting auto-seed process...");
-      
-      const seedData = defaultProducts.map((p) => ({
-        slug: p.slug,
-        img: p.img,
-        name: p.name,
-        short_name: p.shortName,
-        price: parseInt(String(p.price || "").replace(/[^\d]/g, ""), 10) || 0,
-        description: p.description,
-        specs: p.specs,
-        info: p.info,
-        collection_id: p.collectionId || null,
-        images: p.images || [],
-      }));
-
-      const { error: seedErr } = await supabase.from("products").insert(seedData);
-      if (seedErr) {
-        console.error("Failed to seed products to Supabase online:", seedErr);
-        setTimeout(() => {
-          storeActions.setProductsLoaded(true);
-        }, 0);
-      } else {
-        console.log("Successfully seeded 12 premium products to Supabase online!");
-        
-        // Fetch lại ngay sau khi Seed để nạp dữ liệu chuẩn
-        const { data: refetched } = await supabase
-          .from("products")
-          .select(PRODUCT_LIST_COLUMNS)
-          .order("created_at", { ascending: false });
-        if (refetched && refetched.length > 0) {
-          const mapped: Product[] = refetched.map((p: any) => {
-            let specsObj = p.specs;
-            if (typeof specsObj === "string") {
-              try {
-                specsObj = JSON.parse(specsObj);
-              } catch (e) {
-                console.error("Failed to parse specs JSON string:", e);
-              }
-            }
-            return {
-              slug: p.slug,
-              img: p.img,
-              name: p.name,
-              shortName: p.short_name,
-              price: p.price !== null && p.price !== undefined ? String(p.price) : "",
-              description: p.description,
-              specs: specsObj,
-              info: p.info,
-              collectionId: p.collection_id || undefined,
-              images: Array.isArray(p.images) ? p.images : [],
-            };
-          });
-          products.length = 0;
-          products.push(...mapped);
-          
-          // Kích hoạt re-render UI trên React an toàn ngoài chu kỳ render chính
-          setTimeout(() => {
-            storeActions.setProductsLoaded(true);
-          }, 0);
-        }
-      }
+      console.log("Supabase products table is empty. Keeping products empty.");
+      products.length = 0;
+      setTimeout(() => {
+        storeActions.setProductsLoaded(true);
+      }, 0);
+      return products;
     }
   } catch (err: any) {
     console.error("Error in syncProductsWithCloud:", err);

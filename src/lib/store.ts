@@ -281,8 +281,13 @@ export function updateGlobals(currentCollections: Collection[]) {
 }
 
 function load(): State {
+  const useEmptySeedData = isSupabaseConfigured();
+  const initialReviews = useEmptySeedData ? [] : defaultReviews;
+  const initialCollections = useEmptySeedData ? [] : defaultCollections;
+  const initialSlides = useEmptySeedData ? [] : defaultSlides;
+
   if (typeof window === "undefined")
-    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [], collections: defaultCollections, slides: defaultSlides };
+    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: initialReviews, products: [], orders: [], collections: initialCollections, slides: initialSlides };
 
   const seedManager: StoredAccount = {
     id: "manager-seed",
@@ -305,17 +310,17 @@ function load(): State {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
-      updateGlobals(defaultCollections);
+      updateGlobals(initialCollections);
       return {
         cart: [],
         wishlist: [],
         currentUser: null,
         accounts: [seedManager, seedAdmin],
-        reviews: defaultReviews,
+        reviews: initialReviews,
         products: [],
         orders: [],
-        collections: defaultCollections,
-        slides: defaultSlides,
+        collections: initialCollections,
+        slides: initialSlides,
       };
     }
     const parsed = JSON.parse(raw);
@@ -327,15 +332,19 @@ function load(): State {
       loadedAccounts.push(seedAdmin);
     }
 
-    const loadedCollections = Array.isArray(parsed.collections) && parsed.collections.length > 0
+    const loadedCollections = useEmptySeedData
+      ? []
+      : Array.isArray(parsed.collections) && parsed.collections.length > 0
       ? parsed.collections
-      : defaultCollections;
+      : initialCollections;
 
     updateGlobals(loadedCollections);
 
-    const loadedSlides = Array.isArray(parsed.slides) && parsed.slides.length > 0
+    const loadedSlides = useEmptySeedData
+      ? []
+      : Array.isArray(parsed.slides) && parsed.slides.length > 0
       ? parsed.slides
-      : defaultSlides;
+      : initialSlides;
 
     const currentUser = parsed.currentUser ?? null;
     return {
@@ -344,7 +353,7 @@ function load(): State {
       wishlist: currentUser && Array.isArray(parsed.wishlist) ? parsed.wishlist : [],
       currentUser,
       accounts: loadedAccounts,
-      reviews: Array.isArray(parsed.reviews) ? parsed.reviews : defaultReviews,
+      reviews: useEmptySeedData ? [] : Array.isArray(parsed.reviews) ? parsed.reviews : initialReviews,
       products: Array.isArray(parsed.products) ? parsed.products : [],
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
       collections: loadedCollections,
@@ -352,17 +361,17 @@ function load(): State {
       isProductsLoaded: false,
     };
   } catch {
-    updateGlobals(defaultCollections);
+    updateGlobals(initialCollections);
     return {
       cart: [],
       wishlist: [],
       currentUser: null,
       accounts: [seedManager, seedAdmin],
-      reviews: defaultReviews,
+      reviews: initialReviews,
       products: [],
       orders: [],
-      collections: defaultCollections,
-      slides: defaultSlides,
+      collections: initialCollections,
+      slides: initialSlides,
       isProductsLoaded: false,
     };
   }
@@ -389,7 +398,7 @@ function subscribe(fn: () => void) {
 
 const getSnapshot = () => state;
 const getServerSnapshot = () =>
-  ({ cart: [], wishlist: [], currentUser: null, accounts: [], reviews: defaultReviews, products: [], orders: [], collections: defaultCollections, slides: defaultSlides, isProductsLoaded: false }) as State;
+  ({ cart: [], wishlist: [], currentUser: null, accounts: [], reviews: [], products: [], orders: [], collections: [], slides: [], isProductsLoaded: false }) as State;
 
 export function useStore() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
