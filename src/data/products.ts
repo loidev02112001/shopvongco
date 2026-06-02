@@ -326,6 +326,9 @@ export const defaultProducts: Product[] = [
 
 export let products: Product[] = [...defaultProducts];
 
+const PRODUCT_LIST_COLUMNS =
+  "slug,img,name,short_name,price,description,specs,info,collection_id,created_at";
+
 /**
  * Tự động fetch danh sách sản phẩm từ bảng products của Supabase.
  * Nếu bảng rỗng, tự động Seed đẩy toàn bộ 12 sản phẩm lên Supabase.
@@ -342,7 +345,7 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
   try {
     const { data: cloudProducts, error: fetchErr } = await supabase
       .from("products")
-      .select("*")
+      .select(PRODUCT_LIST_COLUMNS)
       .order("created_at", { ascending: false });
 
     if (fetchErr) throw fetchErr;
@@ -386,7 +389,7 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
       
       const seedData = defaultProducts.map((p) => ({
         slug: p.slug,
-        img: p.img, // Lưu dạng đường dẫn/Base64 để đồng bộ hoàn hảo
+        img: p.img,
         name: p.name,
         short_name: p.shortName,
         price: parseInt(String(p.price || "").replace(/[^\d]/g, ""), 10) || 0,
@@ -409,7 +412,7 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
         // Fetch lại ngay sau khi Seed để nạp dữ liệu chuẩn
         const { data: refetched } = await supabase
           .from("products")
-          .select("*")
+          .select(PRODUCT_LIST_COLUMNS)
           .order("created_at", { ascending: false });
         if (refetched && refetched.length > 0) {
           const mapped: Product[] = refetched.map((p: any) => {

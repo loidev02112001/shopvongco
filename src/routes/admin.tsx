@@ -36,6 +36,7 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { products } from "@/data/products";
 import { formatProductPrice } from "@/lib/utils";
 import { ProductCardSkeleton } from "@/components/SiteChrome";
+import { uploadImageFile } from "@/lib/upload";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -400,7 +401,7 @@ function EditorialAdminDashboard() {
     setIsColDrawerOpen(true);
   };
 
-  const handleThumbnailUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -413,16 +414,16 @@ function EditorialAdminDashboard() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setColThumbnail(dataUrl);
-      toast.success("Tải ảnh đại diện thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "collections");
+      setColThumbnail(url);
+      toast.success("Da tai anh dai dien len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh dai dien.");
+    }
   };
 
-  const handleBannerUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBannerUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -435,13 +436,13 @@ function EditorialAdminDashboard() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setColBanner(dataUrl);
-      toast.success("Tải ảnh bìa thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "collections");
+      setColBanner(url);
+      toast.success("Da tai anh bia len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh bia.");
+    }
   };
 
   const handleDeleteCollection = async (targetId: string) => {
@@ -576,7 +577,7 @@ function EditorialAdminDashboard() {
     setIsSlideDrawerOpen(true);
   };
 
-  const handleSlideImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSlideImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -589,13 +590,13 @@ function EditorialAdminDashboard() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setSlideImage(dataUrl);
-      toast.success("Tải ảnh slide thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "slides");
+      setSlideImage(url);
+      toast.success("Da tai anh slide len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh slide.");
+    }
   };
 
   const handleDeleteSlide = async (targetId: string) => {
@@ -747,7 +748,7 @@ function EditorialAdminDashboard() {
     setIsDrawerOpen(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -760,16 +761,16 @@ function EditorialAdminDashboard() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setImg(dataUrl);
-      toast.success("Tải ảnh lên thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "products");
+      setImg(url);
+      toast.success("Da tai anh san pham len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh san pham.");
+    }
   };
 
-  const handleArImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleArImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -782,13 +783,13 @@ function EditorialAdminDashboard() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setArImg(dataUrl);
-      toast.success("Tải ảnh AR trong suốt thành công! 🌟");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "products");
+      setArImg(url);
+      toast.success("Da tai anh AR len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh AR.");
+    }
   };
 
   // Product Sub-Images Handlers
@@ -806,7 +807,7 @@ function EditorialAdminDashboard() {
     toast.info("Đã xóa ảnh phụ 🗑️");
   };
 
-  const handleSubImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSubImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
@@ -817,13 +818,13 @@ function EditorialAdminDashboard() {
       toast.error("Ảnh không được lớn hơn 2MB!");
       return;
     }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setImages([...images, dataUrl]);
-      toast.success("Tải ảnh phụ lên thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "products");
+      setImages([...images, url]);
+      toast.success("Da tai anh phu len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh phu.");
+    }
   };
 
   const handleDelete = async (targetSlug: string) => {
@@ -3109,7 +3110,7 @@ function EditorialAdminDashboard() {
                   </div>
                 )}
 
-                {/* Input text link fallback / base64 string indicator */}
+                {/* Input text link fallback */}
                 <div className="flex gap-3">
                   <input
                     type="text"

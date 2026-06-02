@@ -34,6 +34,7 @@ import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { products } from "@/data/products";
 import { formatProductPrice } from "@/lib/utils";
+import { uploadImageFile } from "@/lib/upload";
 
 const PROVINCES: Record<string, string[]> = {
   "Hà Nội": ["Ba Đình", "Hoàn Kiếm", "Cầu Giấy", "Đống Đa", "Thạch Thất"],
@@ -613,8 +614,8 @@ function ProfilePanel() {
     navigate({ to: "/" });
   };
 
-  // Cập nhật Avatar qua FileReader (Base64 DataURL)
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Cap nhat avatar bang file luu tren server.
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -627,13 +628,13 @@ function ProfilePanel() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      storeActions.updateProfile({ avatar: dataUrl });
-      toast.success("Thay đổi ảnh đại diện thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "avatars");
+      storeActions.updateProfile({ avatar: url });
+      toast.success("Da tai anh dai dien len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh dai dien.");
+    }
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -1830,7 +1831,7 @@ function ProductAdminPanel() {
     setIsModalOpen(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -1843,16 +1844,16 @@ function ProductAdminPanel() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setImg(dataUrl);
-      toast.success("Tải ảnh lên thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "products");
+      setImg(url);
+      toast.success("Da tai anh san pham len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh san pham.");
+    }
   };
 
-  const handleSubImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSubImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -1865,13 +1866,13 @@ function ProductAdminPanel() {
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      setImages((prev) => [...prev, dataUrl]);
-      toast.success("Tải ảnh phụ lên thành công! 📸");
-    };
-    reader.readAsDataURL(file);
+    try {
+      const url = await uploadImageFile(file, "products");
+      setImages((prev) => [...prev, url]);
+      toast.success("Da tai anh phu len server.");
+    } catch (error: any) {
+      toast.error(error?.message || "Khong the upload anh phu.");
+    }
   };
 
   const handleAddSubImageUrl = () => {

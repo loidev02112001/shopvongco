@@ -42,6 +42,21 @@ services:
     networks:
       - luna_net
 
+  upload:
+    build:
+      context: ./upload-server
+    container_name: luna_upload
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_HOST: db
+    volumes:
+      - uploads_data:/uploads
+    networks:
+      - luna_net
+
   caddy:
     image: caddy:2-alpine
     container_name: luna_caddy
@@ -49,11 +64,13 @@ services:
     depends_on:
       - app
       - postgrest
+      - upload
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - uploads_data:/srv/uploads:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -61,6 +78,7 @@ services:
 
 volumes:
   postgres_data:
+  uploads_data:
   caddy_data:
   caddy_config:
 

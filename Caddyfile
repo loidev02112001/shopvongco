@@ -5,6 +5,15 @@ lunajewel.store, www.lunajewel.store {
     reverse_proxy postgrest:3000
   }
 
+  handle /api/upload {
+    reverse_proxy upload:3001
+  }
+
+  handle_path /uploads/* {
+    root * /srv/uploads
+    file_server
+  }
+
   handle {
     reverse_proxy app:80
   }

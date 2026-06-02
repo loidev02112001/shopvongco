@@ -16,8 +16,8 @@ export const Route = createFileRoute("/san-pham/$slug")({
   loader: async ({ params }) => {
     let product = getProduct(params.slug);
     
-    // Nếu chưa có sản phẩm cục bộ (đang load chậm), hãy truy vấn trực tiếp từ database online
-    if (!product && isSupabaseConfigured()) {
+    // Product lists load lightweight fields; detail pages fetch the full record.
+    if (isSupabaseConfigured()) {
       try {
         const { data, error } = await supabase
           .from("products")
