@@ -39,13 +39,30 @@ services:
     restart: unless-stopped
     depends_on:
       - postgrest
+    networks:
+      - luna_net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: luna_caddy
+    restart: unless-stopped
+    depends_on:
+      - app
+      - postgrest
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
     networks:
       - luna_net
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   luna_net:
