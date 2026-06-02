@@ -28,6 +28,7 @@ services:
       - luna_net
 
   app:
+    platform: linux/amd64
     build:
       context: .
       args:

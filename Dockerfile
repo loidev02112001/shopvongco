@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci --include=optional \
-  && npm install --no-save @cloudflare/workerd-linux-64@1.20260526.1 \
+  && npm install --no-save workerd@1.20260526.1 @cloudflare/workerd-linux-64@1.20260526.1 \
   && test -x node_modules/@cloudflare/workerd-linux-64/bin/workerd
 
 COPY . .
@@ -16,7 +16,8 @@ ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
 ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
 ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
-RUN npm run build
+RUN npm run build \
+  && rm -rf dist/server/.wrangler
 
 FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
@@ -27,7 +28,12 @@ ENV WRANGLER_SEND_METRICS=false
 COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
+COPY docker-entrypoint.sh ./docker-entrypoint.sh
+
+RUN chmod +x ./docker-entrypoint.sh \
+  && test -x node_modules/@cloudflare/workerd-linux-64/bin/workerd \
+  && ./node_modules/@cloudflare/workerd-linux-64/bin/workerd --version
 
 EXPOSE 80
 
-CMD ["./node_modules/.bin/wrangler", "dev", "--config", "dist/server/wrangler.json", "--ip", "0.0.0.0", "--port", "80", "--local", "--show-interactive-dev-session=false"]
+CMD ["./docker-entrypoint.sh"]
