@@ -1,8 +1,10 @@
-FROM node:22-alpine AS build
+FROM node:22-bookworm-slim AS build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN npm ci --include=optional \
+  && npm install --no-save @cloudflare/workerd-linux-64@1.20260526.1 \
+  && test -x node_modules/@cloudflare/workerd-linux-64/bin/workerd
 
 COPY . .
 
@@ -16,7 +18,7 @@ ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
 
 RUN npm run build
 
-FROM node:22-alpine AS runtime
+FROM node:22-bookworm-slim AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
