@@ -56,10 +56,10 @@ function EditorialAdminDashboard() {
   const { currentUser, collections = [], slides = [], orders = [], accounts = [], reviews = [], isProductsLoaded } = useStore();
   const navigate = useNavigate();
 
-  // Load Google Fonts for Luxury Aesthetic dynamically
+  // Load the shared project font dynamically for the admin dashboard.
   useEffect(() => {
     const link = document.createElement("link");
-    link.href = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap";
+    link.href = "https://fonts.googleapis.com/css2?family=Ysabeau+Office:wght@300;400;500;600;700;800&display=swap";
     link.rel = "stylesheet";
     document.head.appendChild(link);
     return () => {
@@ -322,7 +322,7 @@ function EditorialAdminDashboard() {
     return (
       <div 
         className="min-h-screen bg-[#07090e] text-white flex flex-col items-center justify-center p-6"
-        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
       >
         {/* Ambient background glows */}
         <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full blur-[140px] opacity-20 bg-amber-500/30 pointer-events-none" />
@@ -335,7 +335,7 @@ function EditorialAdminDashboard() {
           
           <h1 
             className="text-2xl font-semibold tracking-[0.15em] text-amber-400 uppercase mb-3"
-            style={{ fontFamily: "'Playfair Display', serif" }}
+            style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
           >
             Access Restricted
           </h1>
@@ -947,7 +947,7 @@ function EditorialAdminDashboard() {
   return (
     <div 
       className="min-h-screen bg-[#07090e] text-slate-100 flex flex-col overflow-x-hidden"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+      style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
     >
       {/* Dark Ambient Radial Glows */}
       <div className="absolute top-0 right-0 w-[500px] h-[500px] rounded-full blur-[160px] opacity-15 bg-amber-500/20 pointer-events-none" />
@@ -960,7 +960,7 @@ function EditorialAdminDashboard() {
             <span className="text-[9px] font-extrabold uppercase tracking-[0.25em] text-amber-500">Luna Jewel Suite</span>
             <h1 
               className="text-lg md:text-xl font-semibold tracking-wider text-white mt-0.5"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+              style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
             >
               Obsidian & Gold Panel
             </h1>
@@ -1008,7 +1008,7 @@ function EditorialAdminDashboard() {
           <div>
             <h2 
               className="text-3xl md:text-4xl font-light text-white tracking-wide"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+              style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
             >
               {activeTab === "products" 
                 ? "Bảng Điều Phối Kho Hàng" 
@@ -1069,7 +1069,7 @@ function EditorialAdminDashboard() {
               ) : (
                 <div 
                   className="text-4xl font-medium text-white mt-1.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {totalProducts}
                 </div>
@@ -1092,7 +1092,7 @@ function EditorialAdminDashboard() {
               ) : (
                 <div 
                   className="text-4xl font-medium text-white mt-1.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {activeCollections}
                 </div>
@@ -1115,7 +1115,7 @@ function EditorialAdminDashboard() {
               ) : (
                 <div 
                   className="text-4xl font-medium text-white mt-1.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {orders.length}
                 </div>
@@ -1138,7 +1138,7 @@ function EditorialAdminDashboard() {
               ) : (
                 <div 
                   className="text-4xl font-medium text-white mt-1.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {customers.length}
                 </div>
@@ -1424,7 +1424,7 @@ function EditorialAdminDashboard() {
                         <div className="min-w-0">
                           <h4 
                             className="text-base font-medium text-white group-hover:text-amber-400 transition-colors line-clamp-1"
-                            style={{ fontFamily: "'Playfair Display', serif" }}
+                            style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                           >
                             {p.name}
                           </h4>
@@ -1509,7 +1509,7 @@ function EditorialAdminDashboard() {
                           <div className="flex items-center gap-3">
                             <h4 
                               className="text-base font-medium text-white group-hover:text-amber-400 transition-colors line-clamp-1"
-                              style={{ fontFamily: "'Playfair Display', serif" }}
+                              style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                             >
                               {c.name}
                             </h4>
@@ -1597,7 +1597,7 @@ function EditorialAdminDashboard() {
                           <div className="flex items-center gap-3">
                             <h4 
                               className="text-base font-medium text-white group-hover:text-amber-400 transition-colors line-clamp-1"
-                              style={{ fontFamily: "'Playfair Display', serif" }}
+                              style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                             >
                               {s.title || "Slide Không Tiêu Đề"}
                             </h4>
@@ -1696,7 +1696,7 @@ function EditorialAdminDashboard() {
                           <div className="flex items-center gap-3">
                             <span 
                               className="text-sm font-bold text-white tracking-widest bg-white/5 border border-white/10 px-3 py-1 rounded"
-                              style={{ fontFamily: "'Playfair Display', serif" }}
+                              style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                             >
                               {order.id}
                             </span>
@@ -1884,7 +1884,7 @@ function EditorialAdminDashboard() {
                             <div>
                               <h4 
                                 className="text-lg font-bold text-white group-hover:text-amber-400 transition-colors"
-                                style={{ fontFamily: "'Playfair Display', serif" }}
+                                style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                               >
                                 {customer.fullName || "Khách Hàng Chưa Đặt Tên"}
                               </h4>
@@ -2359,7 +2359,7 @@ function EditorialAdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[8px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Weekly Performance</span>
-                        <h4 className="text-sm font-bold text-white mt-0.5" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        <h4 className="text-sm font-bold text-white mt-0.5" style={{ fontFamily: "'Ysabeau Office', sans-serif" }}>
                           Doanh Thu 7 Ngày Qua
                         </h4>
                       </div>
@@ -2456,7 +2456,7 @@ function EditorialAdminDashboard() {
                     <div className="flex items-center justify-between">
                       <div>
                         <span className="text-[8px] font-extrabold uppercase tracking-[0.2em] text-slate-500">Monthly Growth</span>
-                        <h4 className="text-sm font-bold text-white mt-0.5" style={{ fontFamily: "'Playfair Display', serif" }}>
+                        <h4 className="text-sm font-bold text-white mt-0.5" style={{ fontFamily: "'Ysabeau Office', sans-serif" }}>
                           Doanh Thu 6 Tháng Qua
                         </h4>
                       </div>
@@ -2574,7 +2574,7 @@ function EditorialAdminDashboard() {
                 <div className="bg-[#0b0f19] border border-white/5 rounded-2xl p-6 space-y-4">
                   <div>
                     <span className="text-[8px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Inventory Demands</span>
-                    <h4 className="text-sm font-bold text-white mt-0.5" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    <h4 className="text-sm font-bold text-white mt-0.5" style={{ fontFamily: "'Ysabeau Office', sans-serif" }}>
                       Top 5 Sản Phẩm Bán Chạy Nhất
                     </h4>
                   </div>
@@ -2688,7 +2688,7 @@ function EditorialAdminDashboard() {
                               <div className="min-w-0">
                                 <h4 
                                   className="text-sm font-bold text-white group-hover:text-amber-400 transition-colors truncate"
-                                  style={{ fontFamily: "'Playfair Display', serif" }}
+                                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                                 >
                                   {account.fullName || "Tài Khoản Seed"}
                                 </h4>
@@ -2910,7 +2910,7 @@ function EditorialAdminDashboard() {
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Luxury Editor</span>
                 <h3 
                   className="text-lg font-semibold text-white tracking-wide mt-0.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {editingProduct ? "Cập Nhật Thông Tin" : "Thiết Kế Trang Sức Mới"}
                 </h3>
@@ -3503,7 +3503,7 @@ function EditorialAdminDashboard() {
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Luxury Editor</span>
                 <h3 
                   className="text-lg font-semibold text-white tracking-wide mt-0.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {editingCollection ? "Cập Nhật Bộ Sưu Tập" : "Tạo Bộ Sưu Tập Mới"}
                 </h3>
@@ -3841,7 +3841,7 @@ function EditorialAdminDashboard() {
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Luxury Editor</span>
                 <h3 
                   className="text-lg font-semibold text-white tracking-wide mt-0.5"
-                  style={{ fontFamily: "'Playfair Display', serif" }}
+                  style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                 >
                   {editingSlide ? "Cập Nhật Slide Banner" : "Tạo Slide Banner Mới"}
                 </h3>

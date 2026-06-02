@@ -1,17 +1,50 @@
-version: '3.8'
-
 services:
-  tanstack-app:
-    container_name: shopvongco_web
+  db:
+    image: postgres:16-alpine
+    container_name: luna_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db-init:/docker-entrypoint-initdb.d
+    networks:
+      - luna_net
+
+  postgrest:
+    image: postgrest/postgrest:latest
+    container_name: luna_postgrest
+    restart: unless-stopped
+    depends_on:
+      - db
+    environment:
+      PGRST_DB_URI: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: web_anon
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET}
+    networks:
+      - luna_net
+
+  app:
     build:
       context: .
-      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+    container_name: luna_app
+    restart: unless-stopped
+    depends_on:
+      - postgrest
     ports:
-      - "3000:3000"
-    restart: always
-    environment:
-      - NODE_ENV=production
-      - PORT=3000
-      # Khai báo các biến kết nối Supabase của bạn ở đây nếu cần kết nối trực tiếp từ server
-      # - SUPABASE_URL=your_supabase_url
-      # - SUPABASE_ANON_KEY=your_supabase_anon_key
+      - "80:80"
+    networks:
+      - luna_net
+
+volumes:
+  postgres_data:
+
+networks:
+  luna_net:

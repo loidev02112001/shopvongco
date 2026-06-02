@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Ysabeau+Office:wght@300;400;500;600;700;800&display=swap");
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
@@ -63,11 +64,9 @@
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-soft: var(--brand-soft);
   --color-price: var(--price);
-  --font-display: "Yeseva One", serif;
+  --font-display: "Ysabeau Office", sans-serif;
   --font-sans: "Ysabeau Office", sans-serif;
 }
-
-@import url("https://fonts.googleapis.com/css2?family=Ysabeau+Office:wght@300;400;500;600;700;800&family=Yeseva+One&family=Lora:wght@400;500;600;700&display=swap");
 
 :root {
   --radius: 0.5rem;
@@ -170,7 +169,7 @@
     text-shadow: 0 4px 12px rgba(0,0,0,0.55), 0 2px 4px rgba(0,0,0,0.45);
     line-height: 1.2;
   }
-  .t-product { font-family: "Lora", serif; font-size: 17px; font-weight: 400; }
+  .t-product { font-family: var(--font-sans); font-size: 17px; font-weight: 400; }
   .t-price { font-family: var(--font-sans); font-size: 24px; font-weight: 800; }
   .t-filter { font-family: var(--font-sans); font-size: 28px; font-weight: 700; }
   .t-buy { font-family: var(--font-sans); font-size: 32px; font-weight: 700; line-height: 1.1; }

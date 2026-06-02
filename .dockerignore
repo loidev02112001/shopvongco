@@ -1,0 +1,17 @@
+node_modules
+dist
+dist-ssr
+.output
+.vinxi
+.tanstack
+.nitro
+.wrangler
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.log
+*.zip
+doc
+san-pham-thuc-te

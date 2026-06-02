@@ -126,7 +126,7 @@ export function LunaJewelLogo({ variant = "full", className = "", height }: Logo
       aria-label="Luna Jewel"
     >
       <defs>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Yeseva+One&display=swap');`}</style>
+        <style>{`@import url('https://fonts.googleapis.com/css2?family=Ysabeau+Office:wght@300;400;500;600;700;800&display=swap');`}</style>
       </defs>
       {/* Floral icon centered */}
       <FloralIcon cx={vw / 2} cy={36} size={62} />
@@ -135,7 +135,7 @@ export function LunaJewelLogo({ variant = "full", className = "", height }: Logo
         x={vw / 2}
         y="98"
         textAnchor="middle"
-        fontFamily="'Yeseva One', 'Georgia', serif"
+        fontFamily="'Ysabeau Office', sans-serif"
         fontSize="32"
         fontWeight="400"
         letterSpacing="0.5"

@@ -1,30 +1,31 @@
-# --- Stage 1: Install dependencies ---
-FROM oven/sh/bun:1.1-alpine AS deps
+FROM node:22-alpine AS build
 WORKDIR /app
-COPY package.json bun.lock* ./
-RUN bun install --frozen-lockfile
 
-# --- Stage 2: Build the application ---
-FROM oven/sh/bun:1.1-alpine AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package*.json ./
+RUN npm ci
+
 COPY . .
-# Biến môi trường báo hiệu build cho môi trường node/production thay vì cloudflare edge
-ENV PORT=3000
-RUN bun run build
 
-# --- Stage 3: Production Runner ---
-FROM oven/sh/bun:1.1-alpine AS runner
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ARG VITE_GOOGLE_CLIENT_ID
+
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+ENV VITE_GOOGLE_CLIENT_ID=$VITE_GOOGLE_CLIENT_ID
+
+RUN npm run build
+
+FROM node:22-alpine AS runtime
 WORKDIR /app
+
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV WRANGLER_SEND_METRICS=false
 
-# Copy các thư mục output sau khi build của TanStack Start (.output hoặc dist tùy config)
-# Đối với TanStack Start tiêu chuẩn chạy Node, output mặc định nằm trong thư mục .output
-COPY --from=builder /app/.output ./.output
-COPY --from=builder /app/package.json ./package.json
+COPY --from=build /app/package.json ./package.json
+COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
 
-EXPOSE 3000
+EXPOSE 80
 
-# Khởi chạy server production của Nitro backend
-CMD ["bun", ".output/server/index.mjs"]
+CMD ["./node_modules/.bin/wrangler", "dev", "--config", "dist/server/wrangler.json", "--ip", "0.0.0.0", "--port", "80", "--local", "--show-interactive-dev-session=false"]

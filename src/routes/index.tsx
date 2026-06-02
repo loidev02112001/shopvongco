@@ -105,7 +105,7 @@ function Hero() {
                       className={`text-xl sm:text-2xl md:text-4xl lg:text-5xl font-light tracking-wide leading-tight text-white transform transition-all duration-700 delay-300 ${
                         isActive ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
                       }`}
-                      style={{ fontFamily: "'Playfair Display', serif" }}
+                      style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
                     >
                       {slide.subtitle}
                     </h2>
