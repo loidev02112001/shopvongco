@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  tanstack-app:
+    container_name: shopvongco_web
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    restart: always
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Khai báo các biến kết nối Supabase của bạn ở đây nếu cần kết nối trực tiếp từ server
+      # - SUPABASE_URL=your_supabase_url
+      # - SUPABASE_ANON_KEY=your_supabase_anon_key
