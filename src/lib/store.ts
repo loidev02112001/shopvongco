@@ -297,6 +297,8 @@ export const defaultSocialLinks: SocialLinks = {
   website: "https://lunajewel.vn",
 };
 
+let isStoreInitialized = false;
+
 function load(): State {
   const useEmptySeedData = isSupabaseConfigured();
   const initialReviews = useEmptySeedData ? [] : defaultReviews;
@@ -329,7 +331,7 @@ function load(): State {
     if (!raw) {
       updateGlobals(initialCollections);
       return {
-        cart: [],
+        cart: isStoreInitialized && state ? state.cart : [],
         wishlist: [],
         currentUser: null,
         accounts: [seedManager, seedAdmin],
@@ -371,7 +373,7 @@ function load(): State {
       }
     }
     return {
-      cart: Array.isArray(parsed.cart) ? parsed.cart : [],
+      cart: isStoreInitialized && state ? state.cart : [],
       // Chỉ lấy wishlist từ LocalStorage nếu đã đăng nhập, chưa đăng nhập bắt buộc là rỗng
       wishlist: currentUser && Array.isArray(parsed.wishlist) ? parsed.wishlist : [],
       currentUser,
@@ -387,7 +389,7 @@ function load(): State {
   } catch {
     updateGlobals(initialCollections);
     return {
-      cart: [],
+      cart: isStoreInitialized && state ? state.cart : [],
       wishlist: [],
       currentUser: null,
       accounts: [seedManager, seedAdmin],
@@ -403,12 +405,14 @@ function load(): State {
 }
 
 let state: State = load();
+isStoreInitialized = true;
 
 const listeners = new Set<() => void>();
 
 function emit() {
   if (typeof window !== "undefined") {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const { cart: _, ...stateToSave } = state;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }
   updateGlobals(state.collections);
   listeners.forEach((l) => l());
@@ -525,7 +529,7 @@ export const storeActions = {
       }
     }
   },
-  async fetchAndMergeCart(): Promise<CartItem[]> {
+  async fetchAndMergeCart(doMerge = false): Promise<CartItem[]> {
     if (!state.currentUser) return state.cart;
     const localCart = [...state.cart];
 
@@ -546,7 +550,7 @@ export const storeActions = {
             }))
           : [];
 
-        if (localCart.length > 0) {
+        if (doMerge && localCart.length > 0) {
           for (const localItem of localCart) {
             const existing = merged.find(
               (m) => m.slug === localItem.slug && m.size === localItem.size
@@ -891,7 +895,7 @@ export const storeActions = {
     
     // Tự động đồng bộ hóa nạp lại danh sách yêu thích và giỏ hàng từ database
     storeActions.fetchWishlist();
-    storeActions.fetchAndMergeCart();
+    storeActions.fetchAndMergeCart(true);
     
     return { ok: true, user: authUser };
   },
@@ -1020,7 +1024,7 @@ export const storeActions = {
     
     // Tự động đồng bộ hóa nạp lại danh sách yêu thích từ database ngay sau khi đăng nhập thành công để cập nhật icon tym
     storeActions.fetchWishlist();
-    storeActions.fetchAndMergeCart();
+    storeActions.fetchAndMergeCart(true);
     
     return { ok: true, user: authUser };
   },
@@ -1212,6 +1216,7 @@ export const storeActions = {
     
     // Tự động đồng bộ hóa nạp lại danh sách yêu thích từ database ngay sau khi đăng nhập Google thành công để cập nhật icon tym
     storeActions.fetchWishlist();
+    storeActions.fetchAndMergeCart(true);
 
     return { ok: true, user: authUser, isNew };
   },
@@ -2008,7 +2013,7 @@ if (typeof window !== "undefined") {
     const user = load().currentUser;
     if (user) {
       storeActions.fetchWishlist();
-      storeActions.fetchAndMergeCart();
+      storeActions.fetchAndMergeCart(false);
       if (user.role === "MANAGER" || user.role === "ADMIN") {
         storeActions.fetchAllOrders();
         storeActions.fetchAllAccounts();
