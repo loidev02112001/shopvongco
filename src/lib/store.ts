@@ -652,7 +652,6 @@ export const storeActions = {
     return state.cart;
   },
   async toggleWishlist(slug: string) {
-    state = load();
     if (!state.currentUser) {
       toast.error("Vui lòng đăng nhập", {
         description: "Bạn cần đăng nhập tài khoản để lưu sản phẩm yêu thích!",
@@ -705,7 +704,6 @@ export const storeActions = {
   },
 
   async removeFromWishlist(slug: string) {
-    state = load();
     if (!state.currentUser) return;
 
     // Đồng bộ lên Cloud nếu đã cấu hình Supabase và user đã đăng nhập
@@ -731,7 +729,6 @@ export const storeActions = {
   },
 
   async fetchWishlist(): Promise<string[]> {
-    state = load();
     if (!state.currentUser) {
       state = { ...state, wishlist: [] };
       emit();
