@@ -1376,6 +1376,11 @@ export const storeActions = {
     emit();
   },
 
+  setProducts(products: Product[]) {
+    state = { ...state, products, isProductsLoaded: true };
+    emit();
+  },
+
   setProductsLoaded(val: boolean) {
     state = { ...state, isProductsLoaded: val };
     emit();
