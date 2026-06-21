@@ -122,6 +122,59 @@ type State = {
 };
 
 const STORAGE_KEY = "luna-jewel-store-v2";
+const CART_STORAGE_PREFIX = "luna-jewel-cart-v1";
+
+function getCartStorageKey(userId?: string | null) {
+  return `${CART_STORAGE_PREFIX}:${userId || "guest"}`;
+}
+
+function readPersistedCart(userId?: string | null): CartItem[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = localStorage.getItem(getCartStorageKey(userId));
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed.filter(
+      (item): item is CartItem =>
+        typeof item?.slug === "string" &&
+        typeof item?.size === "string" &&
+        Number.isFinite(item?.qty) &&
+        item.qty > 0
+    );
+  } catch {
+    return [];
+  }
+}
+
+function persistCart(userId: string | null | undefined, cart: CartItem[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(getCartStorageKey(userId), JSON.stringify(cart));
+  } catch (error) {
+    console.error("Unable to persist cart:", error);
+  }
+}
+
+function mergeCartItems(...carts: CartItem[][]): CartItem[] {
+  const merged = new Map<string, CartItem>();
+
+  for (const cart of carts) {
+    for (const item of cart) {
+      const key = `${item.slug}::${item.size}`;
+      const existing = merged.get(key);
+      merged.set(key, {
+        ...item,
+        qty: (existing?.qty || 0) + item.qty,
+      });
+    }
+  }
+
+  return Array.from(merged.values());
+}
 
 const defaultReviews: ProductReview[] = [
   {
@@ -297,8 +350,6 @@ export const defaultSocialLinks: SocialLinks = {
   website: "https://lunajewel.vn",
 };
 
-let isStoreInitialized = false;
-
 function load(): State {
   const useEmptySeedData = isSupabaseConfigured();
   const initialReviews = useEmptySeedData ? [] : defaultReviews;
@@ -331,7 +382,7 @@ function load(): State {
     if (!raw) {
       updateGlobals(initialCollections);
       return {
-        cart: isStoreInitialized && state ? state.cart : [],
+        cart: readPersistedCart(),
         wishlist: [],
         currentUser: null,
         accounts: [seedManager, seedAdmin],
@@ -366,14 +417,9 @@ function load(): State {
       ? parsed.slides
       : initialSlides;
 
-    let currentUser = parsed.currentUser ?? null;
-    if (typeof state !== "undefined" && state && state.currentUser && currentUser) {
-      if (JSON.stringify(state.currentUser) === JSON.stringify(currentUser)) {
-        currentUser = state.currentUser;
-      }
-    }
+    const currentUser = parsed.currentUser ?? null;
     return {
-      cart: isStoreInitialized && state ? state.cart : [],
+      cart: readPersistedCart(currentUser?.id),
       // Chỉ lấy wishlist từ LocalStorage nếu đã đăng nhập, chưa đăng nhập bắt buộc là rỗng
       wishlist: currentUser && Array.isArray(parsed.wishlist) ? parsed.wishlist : [],
       currentUser,
@@ -383,13 +429,13 @@ function load(): State {
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
       collections: loadedCollections,
       slides: loadedSlides,
-      isProductsLoaded: typeof state !== "undefined" && state ? state.isProductsLoaded : false,
+      isProductsLoaded: false,
       socialLinks: parsed.socialLinks ?? defaultSocialLinks,
     };
   } catch {
     updateGlobals(initialCollections);
     return {
-      cart: isStoreInitialized && state ? state.cart : [],
+      cart: readPersistedCart(),
       wishlist: [],
       currentUser: null,
       accounts: [seedManager, seedAdmin],
@@ -405,14 +451,31 @@ function load(): State {
 }
 
 let state: State = load();
-isStoreInitialized = true;
 
 const listeners = new Set<() => void>();
 
 function emit() {
   if (typeof window !== "undefined") {
-    const { cart: _, ...stateToSave } = state;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    persistCart(state.currentUser?.id, state.cart);
+
+    const { cart: _, ...stateWithoutCart } = state;
+    const stateToSave = isSupabaseConfigured()
+      ? {
+          ...stateWithoutCart,
+          reviews: [],
+          products: [],
+          orders: [],
+          collections: [],
+          slides: [],
+          isProductsLoaded: false,
+        }
+      : stateWithoutCart;
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch (error) {
+      console.error("Unable to persist application state:", error);
+    }
   }
   updateGlobals(state.collections);
   listeners.forEach((l) => l());
@@ -556,7 +619,7 @@ export const storeActions = {
               (m) => m.slug === localItem.slug && m.size === localItem.size
             );
             if (existing) {
-              existing.qty += localItem.qty;
+              existing.qty = Math.max(existing.qty, localItem.qty);
               const id = `${state.currentUser.id}-${localItem.slug}-${localItem.size}`;
               await supabase.from("cart").upsert({
                 id,
@@ -890,6 +953,10 @@ export const storeActions = {
       ...state,
       accounts: [...state.accounts, newUser],
       currentUser: authUser,
+      cart: mergeCartItems(
+        readPersistedCart(authUser.id),
+        state.currentUser ? [] : state.cart
+      ),
     };
     emit();
     
@@ -1019,6 +1086,10 @@ export const storeActions = {
       ...state,
       accounts: updatedAccounts,
       currentUser: authUser,
+      cart: mergeCartItems(
+        readPersistedCart(authUser.id),
+        state.currentUser ? [] : state.cart
+      ),
     };
     emit();
     
@@ -1211,6 +1282,10 @@ export const storeActions = {
       ...state,
       accounts: updatedAccounts,
       currentUser: authUser,
+      cart: mergeCartItems(
+        readPersistedCart(authUser.id),
+        state.currentUser ? [] : state.cart
+      ),
     };
     emit();
     
@@ -2013,7 +2088,7 @@ if (typeof window !== "undefined") {
     const user = load().currentUser;
     if (user) {
       storeActions.fetchWishlist();
-      storeActions.fetchAndMergeCart(false);
+      storeActions.fetchAndMergeCart(true);
       if (user.role === "MANAGER" || user.role === "ADMIN") {
         storeActions.fetchAllOrders();
         storeActions.fetchAllAccounts();
