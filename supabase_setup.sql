@@ -49,7 +49,19 @@ CREATE TABLE IF NOT EXISTS products (
 -- Hỗ trợ di cư tự động cho các database đã chạy trước đó
 ALTER TABLE products ADD COLUMN IF NOT EXISTS images JSONB DEFAULT '[]'::jsonb;
 
+-- 4. Bảng cart: Lưu trữ thông tin giỏ hàng của người dùng trên database (đồng bộ)
+CREATE TABLE IF NOT EXISTS cart (
+    id TEXT PRIMARY KEY,                            -- ID duy nhất của dòng giỏ hàng ({user_id}-{product_slug}-{size})
+    user_id TEXT REFERENCES users(id) ON DELETE CASCADE, -- Liên kết tài khoản khách hàng
+    product_slug TEXT REFERENCES products(slug) ON DELETE CASCADE, -- Liên kết sản phẩm trong giỏ
+    qty INTEGER DEFAULT 1,                          -- Số lượng sản phẩm
+    size TEXT DEFAULT '40cm + 5cm',                 -- Kích thước biến thể sản phẩm
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, product_slug, size)             -- Đảm bảo mỗi biến thể sản phẩm chỉ xuất hiện 1 dòng trong giỏ hàng của user
+);
+
 -- Bật tính năng Row Level Security (RLS) để bảo vệ dữ liệu (Tùy chọn, mặc định tắt để dễ demo)
 -- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE cart ENABLE ROW LEVEL SECURITY;

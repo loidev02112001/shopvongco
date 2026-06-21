@@ -364,7 +364,12 @@ function load(): State {
       ? parsed.slides
       : initialSlides;
 
-    const currentUser = parsed.currentUser ?? null;
+    let currentUser = parsed.currentUser ?? null;
+    if (typeof state !== "undefined" && state && state.currentUser && currentUser) {
+      if (JSON.stringify(state.currentUser) === JSON.stringify(currentUser)) {
+        currentUser = state.currentUser;
+      }
+    }
     return {
       cart: Array.isArray(parsed.cart) ? parsed.cart : [],
       // Chỉ lấy wishlist từ LocalStorage nếu đã đăng nhập, chưa đăng nhập bắt buộc là rỗng
@@ -376,7 +381,7 @@ function load(): State {
       orders: Array.isArray(parsed.orders) ? parsed.orders : [],
       collections: loadedCollections,
       slides: loadedSlides,
-      isProductsLoaded: false,
+      isProductsLoaded: typeof state !== "undefined" && state ? state.isProductsLoaded : false,
       socialLinks: parsed.socialLinks ?? defaultSocialLinks,
     };
   } catch {
@@ -425,35 +430,69 @@ export function useStore() {
 }
 
 export const storeActions = {
-  addToCart(slug: string, qty = 1, size = "40cm + 5cm") {
+  async addToCart(slug: string, qty = 1, size = "40cm + 5cm") {
     // Phân biệt sản phẩm theo cả slug và size
     const existing = state.cart.find(
       (it) => it.slug === slug && it.size === size
     );
+    const newQty = existing ? existing.qty + qty : qty;
     state = {
       ...state,
       cart: existing
         ? state.cart.map((it) =>
             it.slug === slug && it.size === size
-              ? { ...it, qty: it.qty + qty }
+              ? { ...it, qty: newQty }
               : it
           )
         : [...state.cart, { slug, qty, size }],
     };
     emit();
+
+    if (state.currentUser && isSupabaseConfigured()) {
+      try {
+        const id = `${state.currentUser.id}-${slug}-${size}`;
+        const { error } = await supabase.from("cart").upsert({
+          id,
+          user_id: state.currentUser.id,
+          product_slug: slug,
+          qty: newQty,
+          size,
+        });
+        if (error) throw error;
+      } catch (err) {
+        console.error("Supabase addToCart error:", err);
+      }
+    }
   },
-  setQty(slug: string, qty: number, size = "40cm + 5cm") {
+  async setQty(slug: string, qty: number, size = "40cm + 5cm") {
+    const finalQty = Math.max(1, qty);
     state = {
       ...state,
       cart: state.cart.map((it) =>
         it.slug === slug && it.size === size
-          ? { ...it, qty: Math.max(1, qty) }
+          ? { ...it, qty: finalQty }
           : it
       ),
     };
     emit();
+
+    if (state.currentUser && isSupabaseConfigured()) {
+      try {
+        const id = `${state.currentUser.id}-${slug}-${size}`;
+        const { error } = await supabase.from("cart").upsert({
+          id,
+          user_id: state.currentUser.id,
+          product_slug: slug,
+          qty: finalQty,
+          size,
+        });
+        if (error) throw error;
+      } catch (err) {
+        console.error("Supabase setQty error:", err);
+      }
+    }
   },
-  removeFromCart(slug: string, size = "40cm + 5cm") {
+  async removeFromCart(slug: string, size = "40cm + 5cm") {
     state = {
       ...state,
       cart: state.cart.filter(
@@ -461,10 +500,89 @@ export const storeActions = {
       ),
     };
     emit();
+
+    if (state.currentUser && isSupabaseConfigured()) {
+      try {
+        const id = `${state.currentUser.id}-${slug}-${size}`;
+        const { error } = await supabase.from("cart").delete().eq("id", id);
+        if (error) throw error;
+      } catch (err) {
+        console.error("Supabase removeFromCart error:", err);
+      }
+    }
   },
-  clearCart() {
+  async clearCart() {
+    const userId = state.currentUser?.id;
     state = { ...state, cart: [] };
     emit();
+
+    if (userId && isSupabaseConfigured()) {
+      try {
+        const { error } = await supabase.from("cart").delete().eq("user_id", userId);
+        if (error) throw error;
+      } catch (err) {
+        console.error("Supabase clearCart error:", err);
+      }
+    }
+  },
+  async fetchAndMergeCart(): Promise<CartItem[]> {
+    if (!state.currentUser) return state.cart;
+    const localCart = [...state.cart];
+
+    if (isSupabaseConfigured()) {
+      try {
+        const { data: cloudCart, error } = await supabase
+          .from("cart")
+          .select("product_slug, qty, size")
+          .eq("user_id", state.currentUser.id);
+
+        if (error) throw error;
+
+        let merged: CartItem[] = cloudCart
+          ? cloudCart.map((item: any) => ({
+              slug: item.product_slug,
+              qty: item.qty,
+              size: item.size,
+            }))
+          : [];
+
+        if (localCart.length > 0) {
+          for (const localItem of localCart) {
+            const existing = merged.find(
+              (m) => m.slug === localItem.slug && m.size === localItem.size
+            );
+            if (existing) {
+              existing.qty += localItem.qty;
+              const id = `${state.currentUser.id}-${localItem.slug}-${localItem.size}`;
+              await supabase.from("cart").upsert({
+                id,
+                user_id: state.currentUser.id,
+                product_slug: localItem.slug,
+                qty: existing.qty,
+                size: localItem.size,
+              });
+            } else {
+              merged.push(localItem);
+              const id = `${state.currentUser.id}-${localItem.slug}-${localItem.size}`;
+              await supabase.from("cart").insert({
+                id,
+                user_id: state.currentUser.id,
+                product_slug: localItem.slug,
+                qty: localItem.qty,
+                size: localItem.size,
+              });
+            }
+          }
+        }
+
+        state = { ...state, cart: merged };
+        emit();
+        return merged;
+      } catch (err) {
+        console.error("Supabase fetchAndMergeCart error:", err);
+      }
+    }
+    return state.cart;
   },
   async toggleWishlist(slug: string) {
     state = load();
@@ -770,6 +888,11 @@ export const storeActions = {
       currentUser: authUser,
     };
     emit();
+    
+    // Tự động đồng bộ hóa nạp lại danh sách yêu thích và giỏ hàng từ database
+    storeActions.fetchWishlist();
+    storeActions.fetchAndMergeCart();
+    
     return { ok: true, user: authUser };
   },
 
@@ -897,6 +1020,7 @@ export const storeActions = {
     
     // Tự động đồng bộ hóa nạp lại danh sách yêu thích từ database ngay sau khi đăng nhập thành công để cập nhật icon tym
     storeActions.fetchWishlist();
+    storeActions.fetchAndMergeCart();
     
     return { ok: true, user: authUser };
   },
@@ -1882,11 +2006,15 @@ if (typeof window !== "undefined") {
     storeActions.fetchCollections();
     storeActions.fetchSlides();
     const user = load().currentUser;
-    if (user && (user.role === "MANAGER" || user.role === "ADMIN")) {
-      storeActions.fetchAllOrders();
-      storeActions.fetchAllAccounts();
-    } else if (user) {
-      storeActions.fetchOrders();
+    if (user) {
+      storeActions.fetchWishlist();
+      storeActions.fetchAndMergeCart();
+      if (user.role === "MANAGER" || user.role === "ADMIN") {
+        storeActions.fetchAllOrders();
+        storeActions.fetchAllAccounts();
+      } else {
+        storeActions.fetchOrders();
+      }
     }
   }, 150);
 }

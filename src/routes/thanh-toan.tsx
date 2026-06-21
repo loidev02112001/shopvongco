@@ -89,7 +89,7 @@ function CheckoutPage() {
         }));
       }
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const [provinceOpts] = useState(Object.keys(PROVINCES));
   const districtOpts = form.province ? PROVINCES[form.province] || [] : [];

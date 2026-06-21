@@ -277,7 +277,7 @@ function ProductDetail() {
                   className="flex-1 bg-price text-white rounded-xl py-4.5 px-4 hover:opacity-95 shadow-md active:scale-[0.99] transition-all text-center flex flex-col justify-center items-center"
                 >
                   <div className="font-bold tracking-widest text-xl md:text-2xl">MUA NGAY</div>
-                  <div className="text-[10px] opacity-90 mt-1 uppercase tracking-wider font-semibold">Giao nhanh tận nơi hoặc nhận tại cửa hàng</div>
+                  <div className="text-[12px] opacity-90 mt-1 uppercase tracking-wider font-semibold">Giao nhanh tận nơi hoặc nhận tại cửa hàng</div>
                 </button>
                 <button
                   onClick={() => {

@@ -69,7 +69,7 @@ function OrdersPage() {
     } else {
       // setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   return (
     <div className="min-h-screen bg-neutral-50/50">

@@ -168,6 +168,9 @@ function Hero() {
             />
           ))}
         </div>
+
+
+
       )}
     </section>
   );
@@ -182,17 +185,20 @@ function Benefits() {
     { icon: Gift, title: "Túi & hộp TRANG NHÃ", sub: "Sẵn sàng TRAO TẶNG" },
   ];
   return (
-    <section className="mx-auto mt-5 w-screen max-w-5xl px-4 sm:px-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+    <section className="mx-auto mt-6 w-full max-w-7xl px-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
         {items.map(({ icon: Icon, title, sub }) => (
           <div
             key={title}
-            className="flex min-h-10 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-md bg-brand px-3 py-1.5 text-brand-foreground shadow-xs"
+            className="flex min-h-[56px] md:min-h-[64px] w-full max-w-[240px] md:max-w-[260px] mx-auto items-center justify-center gap-3 rounded-full bg-brand px-4 py-2.5 md:px-5 md:py-3 text-brand-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:brightness-105 active:scale-98 transition-all duration-300 ease-out cursor-default"
           >
-            <Icon className="h-6 w-6 shrink-0" strokeWidth={1.35} />
+            <Icon 
+              className="h-[36px] w-[36px] sm:h-[42px] sm:w-[42px] shrink-0" 
+              strokeWidth={1.25} 
+            />
             <div className="min-w-0 leading-tight">
-              <p className="text-[10px] font-bold sm:text-[11px] md:text-[12px]">{title}</p>
-              <p className="mt-0.5 text-[8px] opacity-90 sm:text-[9px]">{sub}</p>
+              <p className="text-xs sm:text-sm md:text-[15px] font-bold">{title}</p>
+              <p className="mt-0.5 text-[10px] sm:text-xs opacity-90">{sub}</p>
             </div>
           </div>
         ))}

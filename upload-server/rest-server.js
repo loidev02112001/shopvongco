@@ -16,6 +16,7 @@ const allowedTables = new Set([
   "reviews",
   "collections",
   "slides",
+  "cart",
 ]);
 const primaryKeys = {
   users: "id",
@@ -26,6 +27,7 @@ const primaryKeys = {
   reviews: "id",
   collections: "id",
   slides: "id",
+  cart: "id",
 };
 
 const pool = new Pool({

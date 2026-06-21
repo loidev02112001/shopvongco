@@ -26,7 +26,7 @@ function WishlistPage() {
         storeActions.fetchWishlist(),
       ]);
     }
-  }, [currentUser]);
+  }, [currentUser?.id]);
 
   const items = wishlist
     .map((slug) => products.find((product) => product.slug === slug))

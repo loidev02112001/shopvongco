@@ -315,4 +315,13 @@ ON CONFLICT (id) DO UPDATE SET
   date_string = EXCLUDED.date_string,
   is_hidden = EXCLUDED.is_hidden;
 
+INSERT INTO cart (id, user_id, product_slug, qty, size) VALUES
+  ('local-user-day-chuyen-thien-nga-trang-40cm + 5cm', 'local-user', 'day-chuyen-thien-nga-trang', 1, '40cm + 5cm'),
+  ('local-user-buom-hong-mua-he-45cm', 'local-user', 'buom-hong-mua-he', 2, '45cm')
+ON CONFLICT (id) DO UPDATE SET
+  user_id = EXCLUDED.user_id,
+  product_slug = EXCLUDED.product_slug,
+  qty = EXCLUDED.qty,
+  size = EXCLUDED.size;
+
 COMMIT;
