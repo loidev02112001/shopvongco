@@ -1,4 +1,4 @@
-:80, localhost {
+lunajewel.store {
   encode gzip
 
   handle_path /rest/v1/* {
