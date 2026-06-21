@@ -568,7 +568,7 @@ export const storeActions = {
             } else {
               merged.push(localItem);
               const id = `${state.currentUser.id}-${localItem.slug}-${localItem.size}`;
-              await supabase.from("cart").insert({
+              await supabase.from("cart").upsert({
                 id,
                 user_id: state.currentUser.id,
                 product_slug: localItem.slug,
