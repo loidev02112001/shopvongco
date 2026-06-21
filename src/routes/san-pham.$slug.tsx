@@ -8,7 +8,7 @@ import { TopBar, NavBar, ProductCard, Footer } from "@/components/SiteChrome";
 import { getProduct, products } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import brandMission from "@/assets/brand-mission.jpg";
+import giftPackaging from "@/assets/gift-packaging.jpg";
 import { toast } from "sonner";
 import { formatProductPrice } from "@/lib/utils";
 
@@ -160,6 +160,24 @@ function ProductDetail() {
   };
 
   const featured = products.filter(p => p.slug !== product.slug).slice(0, 4);
+  const specRows = [
+    { label: "Kiểu dáng", keys: ["Kiểu dáng", "kieu_dang"] },
+    { label: "Chất liệu", keys: ["Chất liệu", "chat_lieu"] },
+    { label: "Màu sắc", keys: ["Màu sắc", "mau_sac"] },
+    { label: "Độ dài dây", keys: ["Độ dài dây", "do_dai"] },
+    { label: "Kích thước", keys: ["Kích thước", "kich_thuoc"] },
+    {
+      label: "Cách bảo quản & chăm sóc",
+      keys: ["Cách bảo quản & chăm sóc", "cach_bao_quan", "bao_quan"],
+    },
+  ].map(({ label, keys }) => ({
+    label,
+    value:
+      keys
+        .map((key) => product.specs?.[key])
+        .find((value) => value !== undefined && value !== null && value !== "") ??
+      "Đang cập nhật",
+  }));
 
   return (
     <div className="min-h-screen bg-white">
@@ -258,7 +276,7 @@ function ProductDetail() {
                   }}
                   className="flex-1 bg-price text-white rounded-xl py-4.5 px-4 hover:opacity-95 shadow-md active:scale-[0.99] transition-all text-center flex flex-col justify-center items-center"
                 >
-                  <div className="font-bold tracking-widest text-lg md:text-xl">MUA NGAY</div>
+                  <div className="font-bold tracking-widest text-xl md:text-2xl">MUA NGAY</div>
                   <div className="text-[10px] opacity-90 mt-1 uppercase tracking-wider font-semibold">Giao nhanh tận nơi hoặc nhận tại cửa hàng</div>
                 </button>
                 <button
@@ -344,25 +362,29 @@ function ProductDetail() {
       </section>
 
       {/* Description + specs */}
-      <section className="max-w-7xl mx-auto px-6 mt-16">
+      <section className="product-specs-section max-w-7xl mx-auto px-6 mt-16">
         <h2 className="font-display text-2xl text-brand font-bold border-b border-brand/20 pb-3">MÔ TẢ SẢN PHẨM</h2>
 
-        <div className="mt-6 border border-border rounded-lg overflow-hidden bg-white shadow-xs">
+        <div className="mt-6 overflow-hidden border border-gray-500 bg-white">
           <div className="bg-brand-soft/40 border-b border-border px-5 py-3.5 font-bold text-xs uppercase tracking-wider text-brand">THÔNG SỐ THIẾT KẾ</div>
-          <table className="w-full text-sm">
+          <table className="w-full border-collapse text-sm">
             <tbody>
-              {Object.entries(product.specs).map(([k, v]) => (
-                <tr key={k} className="border-t border-border first:border-t-0">
-                  <td className="px-5 py-3 w-56 font-semibold text-foreground/80 bg-muted/20 text-xs md:text-sm">{k}</td>
-                  <td className="px-5 py-3 text-muted-foreground text-xs md:text-sm">{v as string}</td>
+              {specRows.map(({ label, value }) => (
+                <tr key={label} className="border-t border-gray-400 first:border-t-0">
+                  <th
+                    scope="row"
+                    className="w-[32%] border-r border-gray-400 px-5 py-4 text-left text-xs font-semibold text-foreground/85 md:text-sm"
+                  >
+                    {label}
+                  </th>
+                  <td className="px-5 py-4 text-xs text-foreground/75 md:text-sm">
+                    {String(value)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        <h3 className="font-display text-lg font-bold mt-10 text-brand uppercase tracking-wide">{product.info}</h3>
-        <p className="mt-4 text-sm leading-relaxed text-foreground/80 whitespace-pre-line bg-brand-soft/10 p-5 rounded-lg border border-brand/5">{product.description}</p>
 
         <h3 className="font-display text-lg font-bold mt-10 text-brand uppercase tracking-wide">CAM KẾT KHI MUA HÀNG TẠI LUNA JEWEL</h3>
         <ul className="mt-4 space-y-2 text-sm text-foreground/80 pl-2">
@@ -419,7 +441,11 @@ function ProductDetail() {
           Quà tặng nước rửa bạc, khăn lau bạc chuyên dụng.
         </p>
         <div className="mt-6 rounded-lg overflow-hidden border border-brand/5 shadow-xs">
-          <img src={brandMission} alt="Quà tặng" className="w-full max-h-[450px] object-cover" />
+          <img
+            src={giftPackaging}
+            alt="Túi hộp quà tặng Luna Jewel"
+            className="w-full max-h-[520px] object-cover"
+          />
         </div>
 
         {/* ======================= REVIEWS SECTION (UC05) ======================= */}

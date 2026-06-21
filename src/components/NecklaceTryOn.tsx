@@ -17,6 +17,7 @@ import { products, syncProductsWithCloud } from "@/data/products";
 import { toast } from "sonner";
 import { useStore, storeActions } from "@/lib/store";
 import { useNavigate } from "@tanstack/react-router";
+import { formatProductPrice } from "@/lib/utils";
 
 type Necklace = {
   id: string;
@@ -1936,7 +1937,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
                           <p className="text-[11px] leading-snug font-semibold text-foreground/80 line-clamp-2 min-h-[2.6em]">
                             {n.name}
                           </p>
-                          <p className="text-sm font-extrabold text-price mt-1">{n.price}</p>
+                          <p className="text-sm font-extrabold text-price mt-1">{formatProductPrice(n.price)}</p>
                         </div>
                         
                         {/* Buy & Cart Buttons (UC35) */}

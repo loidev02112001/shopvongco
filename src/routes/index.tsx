@@ -4,13 +4,13 @@ import {
   Truck, RotateCcw, ShieldCheck, Gift, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { TopBar, NavBar, ProductCard, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
-import brandMission from "@/assets/brand-mission.jpg";
+import brandMission from "@/assets/brand-mission-home.webp";
 import collection1 from "@/assets/collection-1.png";
 import collection2 from "@/assets/collection-2.png";
 import collection3 from "@/assets/collection-3.png";
 import heroAr from "@/assets/hero-ar.png";
-import { products } from "@/data/products";
 import { useStore } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 
 export const Route = createFileRoute("/")({
@@ -182,17 +182,17 @@ function Benefits() {
     { icon: Gift, title: "Túi & hộp TRANG NHÃ", sub: "Sẵn sàng TRAO TẶNG" },
   ];
   return (
-    <section className="max-w-7xl mx-auto px-6 mt-8">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <section className="mx-auto mt-5 w-screen max-w-5xl px-4 sm:px-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
         {items.map(({ icon: Icon, title, sub }) => (
           <div
             key={title}
-            className="flex items-center justify-center gap-2.5 rounded-[12px] px-3.5 py-2.5 bg-brand text-brand-foreground shadow-xs"
+            className="flex min-h-10 min-w-0 items-center justify-center gap-2 overflow-hidden rounded-md bg-brand px-3 py-1.5 text-brand-foreground shadow-xs"
           >
-            <Icon className="w-[38px] h-[38px] shrink-0" strokeWidth={1.2} />
-            <div className="leading-tight min-w-0">
-              <p className="text-[13px] md:text-[14px] font-bold truncate">{title}</p>
-              <p className="text-[10px] md:text-[11px] opacity-90 truncate">{sub}</p>
+            <Icon className="h-6 w-6 shrink-0" strokeWidth={1.35} />
+            <div className="min-w-0 leading-tight">
+              <p className="text-[10px] font-bold sm:text-[11px] md:text-[12px]">{title}</p>
+              <p className="mt-0.5 text-[8px] opacity-90 sm:text-[9px]">{sub}</p>
             </div>
           </div>
         ))}
@@ -202,7 +202,7 @@ function Benefits() {
 }
 
 function NewProducts() {
-  const { isProductsLoaded } = useStore();
+  const { isProductsLoaded, products } = useStore();
   const newProducts = products.slice(0, 4);
   return (
     <section className="max-w-7xl mx-auto px-6 mt-12">
@@ -226,20 +226,105 @@ function NewProducts() {
   );
 }
 
+function BestSellingProducts() {
+  const { isProductsLoaded, products } = useStore();
+  const [salesBySlug, setSalesBySlug] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadBestSellers = async () => {
+      const { data, error } = await supabase
+        .from("orders")
+        .select("items")
+        .eq("status", "DELIVERED");
+
+      if (error) {
+        console.error("Unable to load best-selling products:", error);
+        return;
+      }
+
+      const sales: Record<string, number> = {};
+      for (const order of data || []) {
+        let items = order.items;
+        if (typeof items === "string") {
+          try {
+            items = JSON.parse(items);
+          } catch {
+            items = [];
+          }
+        }
+
+        if (!Array.isArray(items)) continue;
+        for (const item of items) {
+          const slug = String(item?.slug || "");
+          if (!slug) continue;
+          const quantity = Number(item?.qty ?? item?.quantity ?? 1);
+          sales[slug] = (sales[slug] || 0) + (Number.isFinite(quantity) ? quantity : 1);
+        }
+      }
+
+      if (!cancelled) setSalesBySlug(sales);
+    };
+
+    void loadBestSellers();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const hasSales = Object.values(salesBySlug).some((quantity) => quantity > 0);
+  const bestSellers = hasSales
+    ? [...products]
+        .sort(
+          (a, b) =>
+            (salesBySlug[b.slug] || 0) - (salesBySlug[a.slug] || 0)
+        )
+        .slice(0, 4)
+    : products.slice(0, 4);
+
+  return (
+    <section className="mt-12 bg-brand-soft/20 py-12">
+      <div className="mx-auto max-w-7xl px-6">
+        <h2 className="t-h-main text-center tracking-wide text-brand">
+          SẢN PHẨM BÁN CHẠY
+        </h2>
+        <div className="mt-8 grid grid-cols-2 gap-5 md:grid-cols-4">
+          {!isProductsLoaded
+            ? Array.from({ length: 4 }).map((_, index) => (
+                <ProductCardSkeleton key={index} />
+              ))
+            : bestSellers.map((product) => (
+                <ProductCard key={product.slug} {...product} />
+              ))}
+        </div>
+        <div className="mt-8 flex justify-center">
+          <Link
+            to="/bo-suu-tap"
+            className="rounded-sm border border-brand px-8 py-2 text-sm font-semibold tracking-wide text-brand transition hover:bg-brand hover:text-brand-foreground"
+          >
+            XEM TẤT CẢ
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Collection() {
   const { collections = [] } = useStore();
   const visibleCollections = collections.filter((c) => c.isVisible).slice(0, 3);
 
   return (
-    <section className="max-w-7xl mx-auto px-6 mt-14">
+    <section className="mx-auto mt-12 max-w-5xl px-6">
       <h2 className="t-h-main text-center text-brand tracking-wide">BỘ SƯU TẬP</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {visibleCollections.map((c) => (
           <Link
             key={c.id}
             to="/bo-suu-tap"
             search={{ collection: c.id }}
-            className="group relative aspect-[4/3] bg-muted rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-shadow block"
+            className="group relative block aspect-[3/2] overflow-hidden rounded-md bg-muted shadow-sm transition-shadow hover:shadow-md"
           >
             <img
               src={c.thumbnail}
@@ -247,8 +332,8 @@ function Collection() {
               loading="lazy"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent flex items-end p-5">
-              <span className="text-white font-bold text-base md:text-lg tracking-wide uppercase drop-shadow-sm">
+            <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/60 via-black/20 to-transparent p-4">
+              <span className="text-sm font-bold uppercase tracking-wide text-white drop-shadow-sm md:text-base">
                 {c.name}
               </span>
             </div>
@@ -260,7 +345,7 @@ function Collection() {
 }
 
 function BrandMission() {
-  const { isProductsLoaded } = useStore();
+  const { isProductsLoaded, products } = useStore();
   const [idx, setIdx] = useState(0);
   const pageSize = 2;
   const totalPages = Math.ceil(products.length / pageSize) || 1;
@@ -314,6 +399,7 @@ function Index() {
       <Hero />
       <Benefits />
       <NewProducts />
+      <BestSellingProducts />
       <Collection />
       <BrandMission />
       <Footer />

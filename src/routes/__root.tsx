@@ -113,7 +113,8 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-import { useStore } from "../lib/store";
+import { storeActions, useStore } from "../lib/store";
+import { syncProductsWithCloud } from "../data/products";
 import { useEffect } from "react";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
@@ -123,6 +124,22 @@ function RootComponent() {
   const { currentUser } = useStore();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (
+      location.pathname === "/" ||
+      location.pathname === "/bo-suu-tap" ||
+      location.pathname === "/yeu-thich"
+    ) {
+      void syncProductsWithCloud();
+      if (location.pathname !== "/yeu-thich") {
+        void storeActions.fetchCollections();
+      }
+      if (location.pathname === "/") {
+        void storeActions.fetchSlides();
+      }
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     if (currentUser && (currentUser.role === "MANAGER" || currentUser.role === "ADMIN")) {

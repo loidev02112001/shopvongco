@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, SlidersHorizontal, X, Search as SearchIcon, AlertCircle, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { TopBar, NavBar, ProductCard, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
-import { products as baseProducts, type Product } from "@/data/products";
+import type { Product } from "@/data/products";
 import collection1 from "@/assets/collection-1.png";
 import collection2 from "@/assets/collection-2.png";
 import collection3 from "@/assets/collection-3.png";
@@ -149,7 +149,7 @@ function applyFilters(
 }
 
 function FilterBar() {
-  const { collections } = useStore();
+  const { collections, products } = useStore();
   const navigate = Route.useNavigate();
   const search = Route.useSearch();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
@@ -157,7 +157,7 @@ function FilterBar() {
   // Trích xuất động các tùy chọn từ dữ liệu sản phẩm hiện tại
   const colorOptions = useMemo(() => {
     const set = new Set<string>();
-    baseProducts.forEach((p) => {
+    products.forEach((p) => {
       const rawColor = typeof p.specs?.["Màu sắc"] === "string" ? p.specs["Màu sắc"] : "";
       rawColor
         .split("/")
@@ -166,25 +166,25 @@ function FilterBar() {
         .forEach((c: string) => set.add(c));
     });
     return Array.from(set);
-  }, []);
+  }, [products]);
 
   const materialOptions = useMemo(() => {
     const set = new Set<string>();
-    baseProducts.forEach((p) => {
+    products.forEach((p) => {
       const mat = typeof p.specs?.["Chất liệu"] === "string" ? p.specs["Chất liệu"].trim() : "";
       if (mat) set.add(mat);
     });
     return Array.from(set);
-  }, []);
+  }, [products]);
 
   const sizeOptions = useMemo(() => {
     const set = new Set<string>();
-    baseProducts.forEach((p) => {
+    products.forEach((p) => {
       const sz = typeof p.specs?.["Kích thước"] === "string" ? p.specs["Kích thước"].trim() : "";
       if (sz) set.add(sz);
     });
     return Array.from(set);
-  }, []);
+  }, [products]);
 
   const update = (patch: Partial<Search>) =>
     navigate({
@@ -648,10 +648,10 @@ function CollectionSection({
 }
 
 function CollectionPage() {
-  const { collections, isProductsLoaded } = useStore();
+  const { collections, products, isProductsLoaded } = useStore();
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const filtered = useMemo(() => applyFilters(baseProducts, search, collections), [search, collections]);
+  const filtered = useMemo(() => applyFilters(products, search, collections), [products, search, collections]);
 
   // Exception Flow E1: Collection not found (Mã bộ sưu tập trong URL không hợp lệ)
   const isCollectionInvalid = useMemo(() => {
@@ -980,7 +980,7 @@ function CollectionPage() {
         )}
 
         {/* 3. CHẾ ĐỘ HIỂN THỊ TRANG CHỦ BỘ SƯU TẬP TRUYỀN THỐNG (Mặc định khi không có bất kỳ bộ lọc nào active) */}
-        {!isSearchActive && !isSingleCollectionMode && (
+        {false && !isSearchActive && !isSingleCollectionMode && (
           <>
             <CollectionSection
               id="graceful-muse"
@@ -1009,6 +1009,24 @@ function CollectionPage() {
               intro={collections.find((c) => c.id === "pure-soul")?.intro}
               products={filtered.filter((p) => p.collectionId === "pure-soul")}
             />
+          </>
+        )}
+
+        {!isSearchActive && !isSingleCollectionMode && (
+          <>
+            {collections
+              .filter((collection) => collection.isVisible)
+              .map((collection) => (
+                <CollectionSection
+                  key={collection.id}
+                  id={collection.id}
+                  title={collection.title || collection.name}
+                  intro={collection.intro}
+                  products={filtered.filter(
+                    (product) => product.collectionId === collection.id
+                  )}
+                />
+              ))}
           </>
         )}
       </section>

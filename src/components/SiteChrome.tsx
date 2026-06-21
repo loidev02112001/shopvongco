@@ -43,7 +43,7 @@ function NewsletterForm() {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         placeholder="Email address"
-        className="flex-1 border border-border rounded-l px-3 py-2 text-sm outline-none focus:border-brand transition placeholder-black text-black"
+        className="flex-1 bg-white border border-brand/60 rounded-l px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand transition placeholder-slate-400 text-black"
       />
       <button
         type="submit"
@@ -283,7 +283,7 @@ function SearchForm() {
               <img src={p.img} alt="" className="w-10 h-10 object-cover rounded" />
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-foreground/80 truncate">{p.name}</div>
-                <div className="text-xs text-price font-semibold">{p.price}</div>
+                <div className="text-xs text-price font-semibold">{formatProductPrice(p.price)}</div>
               </div>
             </button>
           ))}
@@ -462,6 +462,7 @@ function ProductCardInner({
 }
 
 export function Footer() {
+  const { socialLinks } = useStore();
   return (
     <footer className="mt-20 bg-brand-soft border-t border-brand/20">
       <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
@@ -555,7 +556,7 @@ export function Footer() {
           <NewsletterForm />
           <div className="flex gap-2.5 mt-4">
             <a
-              href="https://facebook.com"
+              href={socialLinks?.facebook || "https://facebook.com"}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
@@ -564,7 +565,7 @@ export function Footer() {
               <Facebook className="w-4 h-4" />
             </a>
             <a
-              href="https://instagram.com"
+              href={socialLinks?.instagram || "https://instagram.com"}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
@@ -573,7 +574,7 @@ export function Footer() {
               <Instagram className="w-4 h-4" />
             </a>
             <a
-              href="https://youtube.com"
+              href={socialLinks?.youtube || "https://youtube.com"}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Youtube"
@@ -582,7 +583,7 @@ export function Footer() {
               <Youtube className="w-4 h-4" />
             </a>
             <a
-              href="https://tiktok.com"
+              href={socialLinks?.tiktok || "https://tiktok.com"}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
@@ -593,7 +594,7 @@ export function Footer() {
               </svg>
             </a>
             <a
-              href="https://lunajewel.vn"
+              href={socialLinks?.website || "https://lunajewel.vn"}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Website"

@@ -15,6 +15,11 @@ export default defineConfig({
         "truck-lend-unseemly.ngrok-free.dev",
         ".ngrok-free.dev"
       ],
+      proxy: {
+        "/rest/v1": "http://127.0.0.1:3000",
+        "/api/upload": "http://127.0.0.1:3001",
+        "/uploads": "http://127.0.0.1:3001",
+      },
     },
   },
   tanstackStart: {

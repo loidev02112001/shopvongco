@@ -99,6 +99,14 @@ export type Slide = {
   sortOrder: number;
 };
 
+export type SocialLinks = {
+  facebook: string;
+  instagram: string;
+  youtube: string;
+  tiktok: string;
+  website: string;
+};
+
 type State = {
   cart: CartItem[];
   wishlist: string[];
@@ -110,6 +118,7 @@ type State = {
   collections: Collection[];
   slides: Slide[];
   isProductsLoaded: boolean;
+  socialLinks: SocialLinks;
 };
 
 const STORAGE_KEY = "luna-jewel-store-v2";
@@ -280,6 +289,14 @@ export function updateGlobals(currentCollections: Collection[]) {
   COLLECTION_NAMES = names;
 }
 
+export const defaultSocialLinks: SocialLinks = {
+  facebook: "https://facebook.com",
+  instagram: "https://instagram.com",
+  youtube: "https://youtube.com",
+  tiktok: "https://tiktok.com",
+  website: "https://lunajewel.vn",
+};
+
 function load(): State {
   const useEmptySeedData = isSupabaseConfigured();
   const initialReviews = useEmptySeedData ? [] : defaultReviews;
@@ -287,7 +304,7 @@ function load(): State {
   const initialSlides = useEmptySeedData ? [] : defaultSlides;
 
   if (typeof window === "undefined")
-    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: initialReviews, products: [], orders: [], collections: initialCollections, slides: initialSlides };
+    return { cart: [], wishlist: [], currentUser: null, accounts: [], reviews: initialReviews, products: [], orders: [], collections: initialCollections, slides: initialSlides, socialLinks: defaultSocialLinks };
 
   const seedManager: StoredAccount = {
     id: "manager-seed",
@@ -321,6 +338,7 @@ function load(): State {
         orders: [],
         collections: initialCollections,
         slides: initialSlides,
+        socialLinks: defaultSocialLinks,
       };
     }
     const parsed = JSON.parse(raw);
@@ -359,6 +377,7 @@ function load(): State {
       collections: loadedCollections,
       slides: loadedSlides,
       isProductsLoaded: false,
+      socialLinks: parsed.socialLinks ?? defaultSocialLinks,
     };
   } catch {
     updateGlobals(initialCollections);
@@ -373,6 +392,7 @@ function load(): State {
       collections: initialCollections,
       slides: initialSlides,
       isProductsLoaded: false,
+      socialLinks: defaultSocialLinks,
     };
   }
 }
@@ -398,7 +418,7 @@ function subscribe(fn: () => void) {
 
 const getSnapshot = () => state;
 const getServerSnapshot = () =>
-  ({ cart: [], wishlist: [], currentUser: null, accounts: [], reviews: [], products: [], orders: [], collections: [], slides: [], isProductsLoaded: false }) as State;
+  ({ cart: [], wishlist: [], currentUser: null, accounts: [], reviews: [], products: [], orders: [], collections: [], slides: [], isProductsLoaded: false, socialLinks: defaultSocialLinks }) as State;
 
 export function useStore() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
@@ -1839,6 +1859,16 @@ export const storeActions = {
       }
     }
     return state.slides;
+  },
+  updateSocialLinks(links: Partial<SocialLinks>) {
+    state = {
+      ...state,
+      socialLinks: {
+        ...state.socialLinks,
+        ...links,
+      },
+    };
+    emit();
   },
 };
 

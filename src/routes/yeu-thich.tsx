@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Heart, X } from "lucide-react";
 import { TopBar, NavBar, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
-import { getProduct } from "@/data/products";
+import { syncProductsWithCloud } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
 import { formatProductPrice } from "@/lib/utils";
 
@@ -17,16 +17,19 @@ export const Route = createFileRoute("/yeu-thich")({
 });
 
 function WishlistPage() {
-  const { wishlist, currentUser, isProductsLoaded } = useStore();
+  const { wishlist, currentUser, isProductsLoaded, products } = useStore();
 
   useEffect(() => {
     if (currentUser) {
-      storeActions.fetchWishlist();
+      void Promise.all([
+        syncProductsWithCloud(),
+        storeActions.fetchWishlist(),
+      ]);
     }
   }, [currentUser]);
 
   const items = wishlist
-    .map((slug) => getProduct(slug))
+    .map((slug) => products.find((product) => product.slug === slug))
     .filter((p): p is NonNullable<typeof p> => !!p);
 
   return (

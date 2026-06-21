@@ -29,7 +29,12 @@ import {
   Eye,
   Lock,
   Unlock,
-  Star
+  Star,
+  Facebook,
+  Instagram,
+  Youtube,
+  Globe,
+  Link2
 } from "lucide-react";
 import { storeActions, useStore } from "@/lib/store";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
@@ -54,7 +59,7 @@ const DEFAULT_DESCRIPTION =
   "1. Thông tin sản phẩm.\nChất liệu: Bạc 925 an toàn cho da, 100% không gỉ và bền.\nSản phẩm được tặng kèm hộp đựng và nước rửa bạc chuyên dụng.\nHướng dẫn bảo quản: tránh tiếp xúc hóa chất, chất tẩy rửa mạnh.\nLưu ý khi sử dụng: Tránh va đập, sử dụng nhẹ nhàng tránh vướng mắc vào quần áo.\n\n2. Hướng dẫn sử dụng sản phẩm.\nHãy tháo trang sức lúc chơi thể thao, tắm biển, bơi,... để tránh bạc xước và xỉn màu.\nLưu ý khi sử dụng mỹ phẩm thì các chất hóa học có thể làm phai màu bạc.\n\n3. Luna Jewel cam kết.\nSản phẩm 100% giống mô tả.\nĐảm bảo chất lượng và chất liệu bạc 100%.\nSản phẩm được kiểm tra cẩn thận, kỹ càng trước khi giao cho Quý khách.\nGiao hàng toàn quốc, thanh toán khi nhận hàng.";
 
 function EditorialAdminDashboard() {
-  const { currentUser, collections = [], slides = [], orders = [], accounts = [], reviews = [], isProductsLoaded } = useStore();
+  const { currentUser, collections = [], slides = [], orders = [], accounts = [], reviews = [], isProductsLoaded, socialLinks } = useStore();
   const navigate = useNavigate();
 
   // Load the shared project font dynamically for the admin dashboard.
@@ -76,7 +81,7 @@ function EditorialAdminDashboard() {
 
 
   // Active administrative tab switcher state
-  const [activeTab, setActiveTab] = useState<"products" | "collections" | "slides" | "orders" | "customers" | "reviews" | "analytics" | "accounts">("products");
+  const [activeTab, setActiveTab] = useState<"products" | "collections" | "slides" | "orders" | "customers" | "reviews" | "analytics" | "accounts" | "links">("products");
 
   // State Management - Products
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,6 +153,24 @@ function EditorialAdminDashboard() {
   const [slideIsSubmitting, setSlideIsSubmitting] = useState(false);
 
   const slideImageInputRef = useRef<HTMLInputElement>(null);
+
+  // State Management - Social Links
+  const [fbLink, setFbLink] = useState("");
+  const [igLink, setIgLink] = useState("");
+  const [ytLink, setYtLink] = useState("");
+  const [ttLink, setTtLink] = useState("");
+  const [webLink, setWebLink] = useState("");
+  const [isSavingLinks, setIsSavingLinks] = useState(false);
+
+  useEffect(() => {
+    if (socialLinks) {
+      setFbLink(socialLinks.facebook || "");
+      setIgLink(socialLinks.instagram || "");
+      setYtLink(socialLinks.youtube || "");
+      setTtLink(socialLinks.tiktok || "");
+      setWebLink(socialLinks.website || "");
+    }
+  }, [socialLinks]);
 
   const isCloudActive = isSupabaseConfigured();
 
@@ -1019,7 +1042,15 @@ function EditorialAdminDashboard() {
                 ? "Quản Lý Banners & Slideshow"
                 : activeTab === "orders"
                 ? "Quản Lý Đơn Hàng"
-                : "Quản Lý Khách Hàng"}
+                : activeTab === "customers"
+                ? "Quản Lý Khách Hàng"
+                : activeTab === "reviews"
+                ? "Quản Lý Đánh Giá"
+                : activeTab === "analytics"
+                ? "Báo Cáo Doanh Thu"
+                : activeTab === "accounts"
+                ? "Quản Lý Tài Khoản"
+                : "Quản Lý Đường Dẫn Mạng Xã Hội"}
             </h2>
             <p className="text-sm text-slate-400 mt-2 max-w-lg">
               {activeTab === "products" 
@@ -1030,11 +1061,19 @@ function EditorialAdminDashboard() {
                 ? "Không gian thiết lập các slide banner slideshow quảng cáo trang nhã xuất hiện ngoài trang chủ của Luna Jewel."
                 : activeTab === "orders"
                 ? "Không gian tiếp nhận và xử lý, cập nhật tiến độ giao nhận đơn hàng trang sức thời trang Luna Jewel."
-                : "Không gian thống kê thông tin hồ sơ khách hàng, sổ địa chỉ giao nhận và lịch sử mua sắm trực tuyến của người dùng."}
+                : activeTab === "customers"
+                ? "Không gian thống kê thông tin hồ sơ khách hàng, sổ địa chỉ giao nhận và lịch sử mua sắm trực tuyến của người dùng."
+                : activeTab === "reviews"
+                ? "Không gian kiểm duyệt đánh giá và hiển thị phản hồi từ phía khách hàng về trang sức Luna Jewel."
+                : activeTab === "analytics"
+                ? "Thống kê dữ liệu tài chính, doanh thu tổng thể, tỷ lệ thanh toán và xu hướng mua sắm."
+                : activeTab === "accounts"
+                ? "Không gian quản lý phân quyền vai trò người dùng (USER, MANAGER, ADMIN) và trạng thái tài khoản."
+                : "Cấu hình các liên kết mạng xã hội chính thức hiển thị dưới chân trang (Footer) của hệ thống Luna Jewel."}
             </p>
           </div>
           
-          {activeTab !== "orders" && activeTab !== "customers" && activeTab !== "reviews" && activeTab !== "analytics" && activeTab !== "accounts" && (
+          {activeTab !== "orders" && activeTab !== "customers" && activeTab !== "reviews" && activeTab !== "analytics" && activeTab !== "accounts" && activeTab !== "links" && (
             <button
               onClick={
                 activeTab === "products" 
@@ -1336,10 +1375,26 @@ function EditorialAdminDashboard() {
                 )}
               </button>
             )}
+            <button
+              onClick={() => {
+                setActiveTab("links");
+                setSearchQuery("");
+              }}
+              className={`pb-4 text-xs font-bold uppercase tracking-widest relative transition-all duration-300 cursor-pointer ${
+                activeTab === "links"
+                  ? "text-amber-400"
+                  : "text-slate-500 hover:text-slate-300"
+              }`}
+            >
+              <span>🔗 Quản Lý Đường Dẫn</span>
+              {activeTab === "links" && (
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-amber-400 to-amber-600 rounded-full" />
+              )}
+            </button>
           </div>
           
           {/* Search container */}
-          {activeTab !== "analytics" && (
+          {activeTab !== "analytics" && activeTab !== "links" && (
             <div className="relative bg-[#0b0f19] border border-white/5 rounded-xl p-2 flex items-center shadow-inner">
               <Search className="w-5 h-5 text-slate-500 ml-3 shrink-0" />
               <input
@@ -2888,6 +2943,168 @@ function EditorialAdminDashboard() {
                   })}
                 </div>
               )
+            )}
+
+            {/* Premium Social Links Management panel */}
+            {activeTab === "links" && (
+              <div className="max-w-2xl mx-auto w-full bg-[#0a0d14]/80 backdrop-blur-md rounded-[32px] border border-white/5 shadow-2xl p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full blur-[80px] opacity-10 bg-amber-500/30 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-[200px] h-[200px] rounded-full blur-[80px] opacity-5 bg-emerald-500/20 pointer-events-none" />
+
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-2xl">
+                    <Link2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-white tracking-wide" style={{ fontFamily: "'Ysabeau Office', sans-serif" }}>Cấu Hình Đường Dẫn</h3>
+                    <p className="text-xs text-slate-400 mt-1">Cập nhật các liên kết mạng xã hội chính thức của thương hiệu Luna Jewel.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  setIsSavingLinks(true);
+                  try {
+                    storeActions.updateSocialLinks({
+                      facebook: fbLink.trim(),
+                      instagram: igLink.trim(),
+                      youtube: ytLink.trim(),
+                      tiktok: ttLink.trim(),
+                      website: webLink.trim()
+                    });
+                    toast.success("Cập nhật đường dẫn mạng xã hội thành công!", {
+                      style: {
+                        background: "#0d111d",
+                        border: "1px solid rgba(16, 185, 129, 0.2)",
+                        color: "#10b981",
+                      }
+                    });
+                  } catch (err) {
+                    toast.error("Có lỗi xảy ra khi cập nhật liên kết.");
+                  } finally {
+                    setIsSavingLinks(false);
+                  }
+                }} className="space-y-6">
+                  
+                  {/* Facebook Link */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                      <Facebook className="w-3.5 h-3.5 text-blue-400" /> Facebook URL
+                    </label>
+                    <input
+                      type="url"
+                      value={fbLink}
+                      onChange={(e) => setFbLink(e.target.value)}
+                      placeholder="https://facebook.com/..."
+                      className="w-full bg-[#0b0f19] border border-white/5 focus:border-amber-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none transition duration-300"
+                    />
+                  </div>
+
+                  {/* Instagram Link */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                      <Instagram className="w-3.5 h-3.5 text-pink-400" /> Instagram URL
+                    </label>
+                    <input
+                      type="url"
+                      value={igLink}
+                      onChange={(e) => setIgLink(e.target.value)}
+                      placeholder="https://instagram.com/..."
+                      className="w-full bg-[#0b0f19] border border-white/5 focus:border-amber-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none transition duration-300"
+                    />
+                  </div>
+
+                  {/* Tiktok Link */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                      <svg className="w-3.5 h-3.5 text-slate-200 fill-current" viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.97 1.2 2.27 2.03 3.71 2.44v3.75c-1.12-.11-2.22-.56-3.14-1.22-.92-.66-1.63-1.58-2.07-2.64v7.71c.07 1.96-.54 3.91-1.73 5.48-1.18 1.56-2.92 2.6-4.88 2.92-1.96.32-3.99-.08-5.69-1.15-1.7-1.07-2.92-2.75-3.41-4.71-.56-2.09-.19-4.32.99-6.13 1.18-1.81 3.05-3.01 5.2-3.32 1.34-.2 2.72-.03 3.98.48v3.8c-.8-.44-1.7-.63-2.61-.53-.9.09-1.76.51-2.4 1.18-.65.66-1.04 1.54-1.11 2.46-.07.92.19 1.84.73 2.59.54.75 1.32 1.27 2.2 1.45.88.19 1.81.04 2.59-.42.78-.45 1.36-1.19 1.62-2.06.12-.48.16-.97.16-1.46V.02z" />
+                      </svg>
+                      TikTok URL
+                    </label>
+                    <input
+                      type="url"
+                      value={ttLink}
+                      onChange={(e) => setTtLink(e.target.value)}
+                      placeholder="https://tiktok.com/@..."
+                      className="w-full bg-[#0b0f19] border border-white/5 focus:border-amber-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none transition duration-300"
+                    />
+                  </div>
+
+                  {/* Youtube Link */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                      <Youtube className="w-3.5 h-3.5 text-red-500" /> YouTube URL
+                    </label>
+                    <input
+                      type="url"
+                      value={ytLink}
+                      onChange={(e) => setYtLink(e.target.value)}
+                      placeholder="https://youtube.com/..."
+                      className="w-full bg-[#0b0f19] border border-white/5 focus:border-amber-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none transition duration-300"
+                    />
+                  </div>
+
+                  {/* Website Link */}
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
+                      <Globe className="w-3.5 h-3.5 text-emerald-400" /> Website URL
+                    </label>
+                    <input
+                      type="url"
+                      value={webLink}
+                      onChange={(e) => setWebLink(e.target.value)}
+                      placeholder="https://lunajewel.vn"
+                      className="w-full bg-[#0b0f19] border border-white/5 focus:border-amber-500/50 rounded-xl px-4 py-3 text-sm text-slate-200 outline-none transition duration-300"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      type="submit"
+                      disabled={isSavingLinks}
+                      className="px-8 py-3.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-50 text-black text-xs font-bold uppercase tracking-widest transition-all duration-300 shadow-lg shadow-amber-500/10 cursor-pointer flex items-center gap-2"
+                    >
+                      {isSavingLinks ? "Đang lưu..." : "Lưu Cấu Hình"}
+                    </button>
+                  </div>
+                </form>
+
+                {/* Footer Preview Mock */}
+                <div className="mt-10 pt-6 border-t border-white/5 space-y-4">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Xem trước hiển thị (Footer Preview)</h4>
+                  <div className="flex justify-center gap-4 py-4 bg-[#07090e] border border-white/5 rounded-2xl">
+                    {fbLink && (
+                      <a href={fbLink} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-blue-400 flex items-center justify-center border border-white/10 transition duration-300">
+                        <Facebook className="w-5 h-5" />
+                      </a>
+                    )}
+                    {igLink && (
+                      <a href={igLink} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-pink-400 flex items-center justify-center border border-white/10 transition duration-300">
+                        <Instagram className="w-5 h-5" />
+                      </a>
+                    )}
+                    {ttLink && (
+                      <a href={ttLink} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center border border-white/10 transition duration-300">
+                        <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                          <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.02 1.59 4.23.97 1.2 2.27 2.03 3.71 2.44v3.75c-1.12-.11-2.22-.56-3.14-1.22-.92-.66-1.63-1.58-2.07-2.64v7.71c.07 1.96-.54 3.91-1.73 5.48-1.18 1.56-2.92 2.6-4.88 2.92-1.96.32-3.99-.08-5.69-1.15-1.7-1.07-2.92-2.75-3.41-4.71-.56-2.09-.19-4.32.99-6.13 1.18-1.81 3.05-3.01 5.2-3.32 1.34-.2 2.72-.03 3.98.48v3.8c-.8-.44-1.7-.63-2.61-.53-.9.09-1.76.51-2.4 1.18-.65.66-1.04 1.54-1.11 2.46-.07.92.19 1.84.73 2.59.54.75 1.32 1.27 2.2 1.45.88.19 1.81.04 2.59-.42.78-.45 1.36-1.19 1.62-2.06.12-.48.16-.97.16-1.46V.02z" />
+                        </svg>
+                      </a>
+                    )}
+                    {ytLink && (
+                      <a href={ytLink} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-red-500 flex items-center justify-center border border-white/10 transition duration-300">
+                        <Youtube className="w-5 h-5" />
+                      </a>
+                    )}
+                    {webLink && (
+                      <a href={webLink} target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-emerald-400 flex items-center justify-center border border-white/10 transition duration-300">
+                        <Globe className="w-5 h-5" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+
+              </div>
             )}
 
           </div>

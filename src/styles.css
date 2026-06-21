@@ -175,4 +175,16 @@
   .t-buy { font-family: var(--font-sans); font-size: 32px; font-weight: 700; line-height: 1.1; }
   .t-buy-sub { font-family: var(--font-sans); font-size: 16px; font-weight: 500; }
   .t-small { font-family: var(--font-sans); font-size: 24px; font-weight: 400; }
+
+  .product-specs-section > h2 {
+    border-bottom: 2px solid #55b8bb;
+    padding-bottom: 8px;
+  }
+
+  .product-specs-section > div:first-of-type > div:first-child {
+    background: #55b8bb;
+    color: #123c3e;
+    padding: 8px 20px;
+    border-bottom: 1px solid #6b7280;
+  }
 }

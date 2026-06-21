@@ -333,11 +333,11 @@ const PRODUCT_LIST_COLUMNS =
  * Tự động fetch danh sách sản phẩm từ bảng products của Supabase.
  * Nếu bảng rỗng, tự động Seed đẩy toàn bộ 12 sản phẩm lên Supabase.
  */
-export async function syncProductsWithCloud(): Promise<Product[]> {
+async function performProductsSync(): Promise<Product[]> {
   if (!isSupabaseConfigured()) {
     console.log("Supabase is not configured, running in local fallback mode for products.");
     setTimeout(() => {
-      storeActions.setProductsLoaded(true);
+      storeActions.setProducts(products);
     }, 100);
     return products;
   }
@@ -381,24 +381,35 @@ export async function syncProductsWithCloud(): Promise<Product[]> {
 
       // Kích hoạt re-render UI trên React an toàn ngoài chu kỳ render chính
       setTimeout(() => {
-        storeActions.setProductsLoaded(true);
+        storeActions.setProducts([...products]);
       }, 0);
       return products;
     } else {
       console.log("Supabase products table is empty. Keeping products empty.");
       products.length = 0;
       setTimeout(() => {
-        storeActions.setProductsLoaded(true);
+        storeActions.setProducts([]);
       }, 0);
       return products;
     }
   } catch (err: any) {
     console.error("Error in syncProductsWithCloud:", err);
     setTimeout(() => {
-      storeActions.setProductsLoaded(true);
+      storeActions.setProducts([...products]);
     }, 0);
   }
   return products;
+}
+
+let activeProductsSync: Promise<Product[]> | null = null;
+
+export function syncProductsWithCloud(): Promise<Product[]> {
+  if (!activeProductsSync) {
+    activeProductsSync = performProductsSync().finally(() => {
+      activeProductsSync = null;
+    });
+  }
+  return activeProductsSync;
 }
 
 // Tự động kích hoạt đồng bộ khi khởi động trên môi trường trình duyệt an toàn ngoài chu kỳ render

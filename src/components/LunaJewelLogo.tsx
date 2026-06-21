@@ -1,10 +1,12 @@
 /**
- * LunaJewelLogo — SVG inline logo matching the brand identity.
+ * LunaJewelLogo — SVG inline logo or cropped brand logo image.
  * Props:
- *   variant: "full"   — floral icon + "Luna Jewel" text (for TopBar)
+ *   variant: "full"   — floral icon + "Luna Jewel" text (for TopBar/Footer)
  *            "icon"   — floral icon only (for product card watermark)
  *   className: extra Tailwind / CSS classes
  */
+
+import logoImage from "@/assets/luna-jewel-logo.png";
 
 interface LogoProps {
   variant?: "full" | "icon";
@@ -113,36 +115,37 @@ export function LunaJewelLogo({ variant = "full", className = "", height }: Logo
 
   // full variant — icon on top, text below (stacked like in the reference image)
   const h = height ?? 52;
-  // viewBox: 200 wide × 110 tall (icon 70px, gap, text 36px)
-  const vw = 200;
-  const vh = 110;
+  // Bounding box of the logo content inside the 1024x576 image
+  const crop = { x: 230, y: 112, width: 565, height: 255 };
+  const scale = h / crop.height;
+
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox={`0 0 ${vw} ${vh}`}
-      height={h}
-      width={(h / vh) * vw}
+    <span
       className={className}
       aria-label="Luna Jewel"
+      role="img"
+      style={{
+        display: "inline-block",
+        position: "relative",
+        overflow: "hidden",
+        flexShrink: 0,
+        width: crop.width * scale,
+        height: h,
+      }}
     >
-      <defs>
-        <style>{`@import url('https://fonts.googleapis.com/css2?family=Ysabeau+Office:wght@300;400;500;600;700;800&display=swap');`}</style>
-      </defs>
-      {/* Floral icon centered */}
-      <FloralIcon cx={vw / 2} cy={36} size={62} />
-      {/* Brand name below icon */}
-      <text
-        x={vw / 2}
-        y="98"
-        textAnchor="middle"
-        fontFamily="'Ysabeau Office', sans-serif"
-        fontSize="32"
-        fontWeight="400"
-        letterSpacing="0.5"
-        fill={BRAND}
-      >
-        Luna Jewel
-      </text>
-    </svg>
+      <img
+        src={logoImage}
+        alt=""
+        draggable={false}
+        style={{
+          position: "absolute",
+          width: 1024 * scale,
+          height: 576 * scale,
+          maxWidth: "none",
+          left: -crop.x * scale,
+          top: -crop.y * scale,
+        }}
+      />
+    </span>
   );
 }
