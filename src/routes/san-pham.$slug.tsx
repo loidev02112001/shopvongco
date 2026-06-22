@@ -1,14 +1,15 @@
 import { createFileRoute, notFound, Link, useNavigate } from "@tanstack/react-router";
 import { useState, useMemo, useEffect } from "react";
 import { 
-  Heart, Plus, Minus, MessageCircle, Truck, 
-  RotateCcw, ShieldCheck, Gift, Camera, Star, User as UserIcon
+  Heart, Plus, Minus, MessageCircle,
+  Gift, Camera, Star, User as UserIcon
 } from "lucide-react";
 import { TopBar, NavBar, ProductCard, Footer } from "@/components/SiteChrome";
 import { getProduct, products } from "@/data/products";
 import { storeActions, useStore } from "@/lib/store";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import giftPackaging from "@/assets/gift-packaging.jpg";
+import { BenefitsStrip } from "@/components/BenefitsStrip";
 import { toast } from "sonner";
 import { formatProductPrice } from "@/lib/utils";
 
@@ -415,25 +416,7 @@ function ProductDetail() {
           Là thương hiệu hàng đầu trong lĩnh vực trang sức bạc, Luna Jewel mang tới các sản phẩm thiết kế đẹp mắt, chất lượng tốt nhất và phù hợp cho từng yêu cầu của khách hàng.
         </p>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8">
-          {[
-            { icon: Truck, title: "MIỄN PHÍ vận chuyển", sub: "Đơn Hàng từ 950.000 VNĐ" },
-            { icon: RotateCcw, title: "Đổi trả MIỄN PHÍ", sub: "Trong vòng 30 NGÀY" },
-            { icon: ShieldCheck, title: "Dịch vụ BẢO HÀNH", sub: "Làm mới TRỌN ĐỜI" },
-            { icon: Gift, title: "Túi & hộp TRANG NHÃ", sub: "Sẵn sàng TRAO TẶNG" },
-          ].map(({ icon: Icon, title, sub }) => (
-            <div
-              key={title}
-              className="flex items-center justify-center gap-2.5 rounded-[12px] px-3.5 py-2.5 bg-brand text-brand-foreground shadow-xs"
-            >
-              <Icon className="w-[38px] h-[38px] shrink-0" strokeWidth={1.2} />
-              <div className="leading-tight min-w-0">
-                <p className="text-[13px] md:text-[14px] font-bold truncate">{title}</p>
-                <p className="text-[10px] md:text-[11px] opacity-90 truncate">{sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+        <BenefitsStrip className="mt-8 px-0" />
 
         <h3 className="t-h-main text-center text-brand mt-14 uppercase">TÚI HỘP QUÀ TẶNG TRANG NHÃ</h3>
         <p className="text-xs md:text-sm text-center text-foreground/70 mt-2 max-w-xl mx-auto leading-relaxed">

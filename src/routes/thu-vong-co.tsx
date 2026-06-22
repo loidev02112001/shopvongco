@@ -2,10 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { TopBar, NavBar, Footer } from "@/components/SiteChrome";
 import { NecklaceTryOn } from "@/components/NecklaceTryOn";
 import {
-  Truck,
-  RotateCcw,
-  ShieldCheck,
-  Gift,
   Heart,
   Sun,
   Star,
@@ -16,6 +12,7 @@ import {
   Sparkles,
   Clover,
 } from "lucide-react";
+import { BenefitsStrip } from "@/components/BenefitsStrip";
 import charms from "@/assets/tryon-charms.jpg";
 import heart from "@/assets/tryon-heart.jpg";
 import realProduct1 from "@/assets/real-product-1.jpg";
@@ -49,13 +46,6 @@ export const Route = createFileRoute("/thu-vong-co")({
   component: ThuVongCoPage,
 });
 
-const badges = [
-  { icon: Truck, title: "MIỄN PHÍ vận chuyển", sub: "Đơn Hàng từ 950.000 VNĐ" },
-  { icon: RotateCcw, title: "Đổi giá MIỄN PHÍ", sub: "Trong vòng 30 NGÀY" },
-  { icon: ShieldCheck, title: "Dịch vụ BẢO HÀNH", sub: "Làm mới TRỌN ĐỜI" },
-  { icon: Gift, title: "Túi & hộp TRANG NHÃ", sub: "Sẵn sàng TRAO TẶNG" },
-];
-
 const symbols = [Heart, Heart, Sparkles, Sun, Star, Moon, Leaf, PawPrint, Hand, Clover];
 
 function ThuVongCoPage() {
@@ -78,23 +68,7 @@ function ThuVongCoPage() {
         />
       </section>
 
-      {/* Trust badges */}
-      <section className="max-w-7xl mx-auto px-6 mt-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {badges.map((b) => (
-            <div
-              key={b.title}
-              className="flex items-center justify-center gap-2.5 rounded-[12px] px-3.5 py-2.5 bg-brand text-brand-foreground shadow-xs"
-            >
-              <b.icon className="w-[38px] h-[38px] shrink-0" strokeWidth={1.2} />
-              <div className="leading-tight min-w-0">
-                <p className="text-[13px] md:text-[14px] font-bold truncate">{b.title}</p>
-                <p className="text-[10px] md:text-[11px] opacity-90 truncate">{b.sub}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
+      <BenefitsStrip className="mt-8" />
 
       {/* Thử vòng cổ trực tuyến */}
       <NecklaceTryOn initSlug={slug} initImage={img} />

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect } from "react";
 import {
-  Truck, RotateCcw, ShieldCheck, Gift, ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight,
 } from "lucide-react";
+import { BenefitsStrip } from "@/components/BenefitsStrip";
 import { TopBar, NavBar, ProductCard, ProductCardSkeleton, Footer } from "@/components/SiteChrome";
 import brandMission from "@/assets/brand-mission-home.webp";
 import collection1 from "@/assets/collection-1.png";
@@ -176,36 +177,6 @@ function Hero() {
   );
 }
 
-
-function Benefits() {
-  const items = [
-    { icon: Truck, title: "MIỄN PHÍ vận chuyển", sub: "Đơn Hàng từ 950.000 VNĐ" },
-    { icon: RotateCcw, title: "Đổi trả MIỄN PHÍ", sub: "Trong vòng 30 NGÀY" },
-    { icon: ShieldCheck, title: "Dịch vụ BẢO HÀNH", sub: "Làm mới TRỌN ĐỜI" },
-    { icon: Gift, title: "Túi & hộp TRANG NHÃ", sub: "Sẵn sàng TRAO TẶNG" },
-  ];
-  return (
-    <section className="mx-auto mt-6 w-full max-w-7xl px-6">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-        {items.map(({ icon: Icon, title, sub }) => (
-          <div
-            key={title}
-            className="flex min-h-[56px] md:min-h-[64px] w-full max-w-[240px] md:max-w-[260px] mx-auto items-center justify-center gap-3 rounded-full bg-brand px-4 py-2.5 md:px-5 md:py-3 text-brand-foreground shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:brightness-105 active:scale-98 transition-all duration-300 ease-out cursor-default"
-          >
-            <Icon 
-              className="h-[36px] w-[36px] sm:h-[42px] sm:w-[42px] shrink-0" 
-              strokeWidth={1.25} 
-            />
-            <div className="min-w-0 leading-tight">
-              <p className="text-xs sm:text-sm md:text-[15px] font-bold">{title}</p>
-              <p className="mt-0.5 text-[10px] sm:text-xs opacity-90">{sub}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
 
 function NewProducts() {
   const { isProductsLoaded, products } = useStore();
@@ -403,7 +374,7 @@ function Index() {
       <TopBar />
       <NavBar />
       <Hero />
-      <Benefits />
+      <BenefitsStrip />
       <NewProducts />
       <BestSellingProducts />
       <Collection />

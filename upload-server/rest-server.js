@@ -17,6 +17,7 @@ const allowedTables = new Set([
   "collections",
   "slides",
   "cart",
+  "social_links",
 ]);
 const primaryKeys = {
   users: "id",
@@ -28,6 +29,7 @@ const primaryKeys = {
   collections: "id",
   slides: "id",
   cart: "id",
+  social_links: "id",
 };
 
 const pool = new Pool({

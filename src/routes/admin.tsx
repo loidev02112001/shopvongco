@@ -2961,11 +2961,11 @@ function EditorialAdminDashboard() {
                   </div>
                 </div>
 
-                <form onSubmit={(e) => {
+                <form onSubmit={async (e) => {
                   e.preventDefault();
                   setIsSavingLinks(true);
                   try {
-                    storeActions.updateSocialLinks({
+                    await storeActions.updateSocialLinks({
                       facebook: fbLink.trim(),
                       instagram: igLink.trim(),
                       youtube: ytLink.trim(),

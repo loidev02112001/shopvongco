@@ -2066,15 +2066,62 @@ export const storeActions = {
     }
     return state.slides;
   },
-  updateSocialLinks(links: Partial<SocialLinks>) {
+  async updateSocialLinks(links: Partial<SocialLinks>): Promise<SocialLinks> {
+    const updatedLinks = {
+      ...state.socialLinks,
+      ...links,
+    };
+
+    if (isSupabaseConfigured()) {
+      const { error } = await supabase.from("social_links").upsert({
+        id: "main",
+        facebook: updatedLinks.facebook,
+        instagram: updatedLinks.instagram,
+        tiktok: updatedLinks.tiktok,
+        youtube: updatedLinks.youtube,
+        website: updatedLinks.website,
+        updated_at: new Date().toISOString(),
+      });
+
+      if (error) throw error;
+    }
+
     state = {
       ...state,
-      socialLinks: {
-        ...state.socialLinks,
-        ...links,
-      },
+      socialLinks: updatedLinks,
     };
     emit();
+    return updatedLinks;
+  },
+  async fetchSocialLinks(): Promise<SocialLinks> {
+    if (isSupabaseConfigured()) {
+      try {
+        const { data, error } = await supabase
+          .from("social_links")
+          .select("facebook, instagram, tiktok, youtube, website")
+          .eq("id", "main");
+
+        if (error) throw error;
+        const row = data?.[0];
+
+        if (row) {
+          const fetchedLinks: SocialLinks = {
+            facebook: row.facebook || "",
+            instagram: row.instagram || "",
+            tiktok: row.tiktok || "",
+            youtube: row.youtube || "",
+            website: row.website || "",
+          };
+          state = { ...state, socialLinks: fetchedLinks };
+          emit();
+          return fetchedLinks;
+        }
+      } catch (error) {
+        console.error("Supabase fetchSocialLinks error:", error);
+      }
+    }
+
+    return state.socialLinks;
   },
 };
 
@@ -2082,6 +2129,7 @@ if (typeof window !== "undefined") {
   setTimeout(() => {
     storeActions.fetchCollections();
     storeActions.fetchSlides();
+    storeActions.fetchSocialLinks();
     const user = load().currentUser;
     if (user) {
       storeActions.fetchWishlist();
