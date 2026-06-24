@@ -22,17 +22,17 @@ export function PolicyLayout({
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
       <NavBar />
-      <main className="max-w-6xl w-full mx-auto px-6 py-16 flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-10">
+      <main className="max-w-6xl w-full mx-auto px-4 py-10 flex-1 grid grid-cols-1 lg:grid-cols-[240px_1fr] gap-8 sm:px-6 sm:py-16 lg:gap-10">
         {/* Sidebar */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <h2 className="text-sm font-bold tracking-wider text-brand mb-4">
             DANH MỤC TRANG
           </h2>
-          <ul className="space-y-3">
+          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:block lg:space-y-3">
             {LINKS.map((l) => {
               const isActive = l.to === active;
               return (
-                <li key={l.to} className="flex items-start gap-2">
+                <li key={l.to} className="flex min-h-11 items-center gap-2 rounded-md border border-brand/10 px-3 py-2 lg:min-h-0 lg:border-0 lg:px-0 lg:py-0">
                   <span
                     className={`mt-2 inline-block w-1.5 h-1.5 rounded-full shrink-0 ${
                       isActive ? "bg-brand" : "bg-foreground/40"
@@ -56,7 +56,7 @@ export function PolicyLayout({
 
         {/* Content */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-8">{title}</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-6 sm:text-3xl sm:mb-8">{title}</h1>
           <div className="prose prose-sm text-foreground/80 space-y-6 max-w-3xl">
             {children}
           </div>

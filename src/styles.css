@@ -150,11 +150,21 @@
 
   html, body {
     font-family: var(--font-sans);
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+  }
+
+  img, video, canvas, svg {
+    max-width: 100%;
+  }
+
+  button, input, select, textarea {
+    font: inherit;
   }
 }
 
@@ -186,5 +196,17 @@
     color: #123c3e;
     padding: 8px 20px;
     border-bottom: 1px solid #6b7280;
+  }
+
+  @media (max-width: 767px) {
+    .t-header { font-size: 15px; }
+    .t-h-main { font-size: 28px; line-height: 1.2; }
+    .t-mission { font-size: 25px; }
+    .t-product { font-size: 14px; }
+    .t-price { font-size: 19px; }
+    .t-filter { font-size: 22px; }
+    .t-buy { font-size: 24px; }
+    .t-buy-sub { font-size: 13px; }
+    .t-small { font-size: 18px; }
   }
 }

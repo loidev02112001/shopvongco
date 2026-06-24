@@ -63,7 +63,7 @@ function Hero() {
 
   return (
     <section 
-      className="relative w-full overflow-hidden aspect-[21/9] sm:aspect-[3/1] bg-[#07090e]"
+      className="relative w-full overflow-hidden aspect-[16/7] sm:aspect-[3/1] bg-[#07090e]"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
@@ -89,7 +89,7 @@ function Hero() {
               />
               
               {/* Editorial Gradient Overlay */}
-              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex items-center px-8 md:px-20">
+              <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent flex items-center px-5 sm:px-8 md:px-20">
                 <div className="max-w-xl text-left text-white space-y-3 md:space-y-4">
                   {slide.title && (
                     <span 
@@ -139,14 +139,14 @@ function Hero() {
           <button
             onClick={prevSlide}
             aria-label="Slide trước"
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105"
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 hidden w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black sm:flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105"
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           <button
             onClick={nextSlide}
             aria-label="Slide tiếp theo"
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105"
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 hidden w-10 h-10 rounded-full bg-black/40 border border-white/10 hover:border-amber-500 hover:bg-amber-500 hover:text-black sm:flex items-center justify-center text-white transition duration-300 cursor-pointer shadow-lg hover:scale-105"
           >
             <ChevronRight className="w-5 h-5" />
           </button>
@@ -182,9 +182,9 @@ function NewProducts() {
   const { isProductsLoaded, products } = useStore();
   const newProducts = products.slice(0, 4);
   return (
-    <section className="max-w-7xl mx-auto px-6 mt-12">
+    <section className="max-w-7xl mx-auto px-4 mt-10 sm:px-6 sm:mt-12">
       <h2 className="t-h-main text-center text-brand tracking-wide">SẢN PHẨM MỚI</h2>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mt-6 sm:mt-8">
         {!isProductsLoaded
           ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
           : newProducts.map((p) => p && <ProductCard key={p.slug} {...p} />)}
@@ -262,11 +262,11 @@ function BestSellingProducts() {
 
   return (
     <section className="mt-12 bg-brand-soft/20 py-12">
-      <div className="mx-auto max-w-7xl px-6">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6">
         <h2 className="t-h-main text-center tracking-wide text-brand">
           SẢN PHẨM BÁN CHẠY
         </h2>
-        <div className="mt-8 grid grid-cols-2 gap-5 md:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 gap-3 sm:mt-8 sm:gap-5 md:grid-cols-4">
           {!isProductsLoaded
             ? Array.from({ length: 4 }).map((_, index) => (
                 <ProductCardSkeleton key={index} />
@@ -293,7 +293,7 @@ function Collection() {
   const visibleCollections = collections.filter((c) => c.isVisible).slice(0, 3);
 
   return (
-    <section className="mx-auto mt-12 max-w-5xl px-6">
+    <section className="mx-auto mt-10 max-w-5xl px-4 sm:mt-12 sm:px-6">
       <h2 className="t-h-main text-center text-brand tracking-wide">BỘ SƯU TẬP</h2>
       <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
         {visibleCollections.map((c) => (
@@ -330,9 +330,9 @@ function BrandMission() {
   const start = safeIdx * pageSize;
   const visible = products.slice(start, start + pageSize);
   return (
-    <section className="max-w-7xl mx-auto px-6 mt-14">
+    <section className="max-w-7xl mx-auto px-4 mt-12 sm:px-6 sm:mt-14">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
-        <div className="relative rounded-md overflow-hidden" style={{ minHeight: "520px" }}>
+        <div className="relative min-h-[400px] overflow-hidden rounded-md sm:min-h-[520px]">
           <img src={brandMission} alt="Sứ mệnh thương hiệu" loading="lazy" width={1024} height={1280}
             className="absolute inset-0 w-full h-full object-cover" />
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">

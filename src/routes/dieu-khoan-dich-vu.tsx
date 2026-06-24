@@ -11,8 +11,8 @@ function DieuKhoanDichVuPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
       <NavBar />
-      <main className="max-w-3xl mx-auto px-6 py-16 flex-1">
-        <h1 className="text-5xl md:text-6xl font-bold mb-8" style={{ color: "#60caca" }}>Điều Khoản Dịch Vụ</h1>
+      <main className="max-w-3xl mx-auto px-4 py-10 flex-1 sm:px-6 sm:py-16">
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-6 sm:mb-8" style={{ color: "#60caca" }}>Điều Khoản Dịch Vụ</h1>
         <div className="prose prose-sm text-foreground/80 space-y-6">
           <section>
             <h2 className="text-xl font-semibold text-foreground mb-3">1. Chấp nhận điều khoản</h2>

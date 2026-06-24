@@ -41,8 +41,8 @@ function SupportPage() {
     <div className="min-h-screen bg-white">
       <TopBar />
       <NavBar />
-      <section className="max-w-5xl mx-auto px-6 py-10">
-        <h1 className="font-display text-3xl text-brand font-semibold tracking-wide flex items-center gap-3">
+      <section className="max-w-5xl mx-auto px-4 py-8 sm:px-6 sm:py-10">
+        <h1 className="font-display text-2xl text-brand font-semibold tracking-wide flex items-center gap-3 sm:text-3xl">
           <HelpCircle className="w-6 h-6" /> TRUNG TÂM HỖ TRỢ
         </h1>
 

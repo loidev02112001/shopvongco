@@ -214,9 +214,9 @@ function CheckoutPage() {
       <TopBar />
       <NavBar />
 
-      <section className="max-w-7xl mx-auto px-6 pt-8 animate-fadeIn">
+      <section className="max-w-7xl mx-auto px-4 pt-6 animate-fadeIn sm:px-6 sm:pt-8">
         {/* Cart summary */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 border-b border-brand/40 pb-3 text-sm font-semibold text-brand">
+        <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 border-b border-brand/40 pb-3 text-sm font-semibold text-brand">
           <div>THÔNG TIN SẢN PHẨM</div>
           <div className="text-center">GIÁ</div>
           <div className="text-center">SỐ LƯỢNG</div>
@@ -226,7 +226,8 @@ function CheckoutPage() {
 
         {checkoutItems.length > 0 ? (
           checkoutItems.map((item) => (
-            <div key={`${item.slug}-${item.size}`} className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center py-5 border-b border-brand/20">
+            <div key={`${item.slug}-${item.size}`}>
+              <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center py-5 border-b border-brand/20">
               <div className="flex items-center gap-4">
                 <Link to="/san-pham/$slug" params={{ slug: item.slug }} className="shrink-0">
                   <img
@@ -289,6 +290,69 @@ function CheckoutPage() {
                   </button>
                 )}
               </div>
+              </div>
+
+              <article className="border-b border-brand/20 py-5 md:hidden">
+                <div className="flex gap-3">
+                  <img
+                    src={item.img}
+                    alt={item.name}
+                    className="h-24 w-24 shrink-0 rounded-md border border-brand/10 object-cover"
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="line-clamp-2 text-sm font-bold text-brand">{item.shortName}</p>
+                        <span className="mt-2 inline-flex rounded bg-brand-soft/60 px-2 py-1 text-[10px] font-bold text-brand">
+                          Kích thước: {item.size}
+                        </span>
+                      </div>
+                      {slug && (
+                        <button
+                          type="button"
+                          onClick={() => setRemoved(true)}
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-price"
+                          aria-label="Xóa"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-2 text-sm font-bold text-price">
+                      {formatPrice(parsePrice(item.price))}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center justify-between">
+                  {slug ? (
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setQty(Math.max(1, qty - 1))}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-brand/40 text-brand"
+                      >
+                        <Minus className="h-4 w-4" />
+                      </button>
+                      <span className="min-w-6 text-center font-semibold">{qty}</span>
+                      <button
+                        type="button"
+                        onClick={() => setQty(qty + 1)}
+                        className="flex h-9 w-9 items-center justify-center rounded-full border border-brand/40 text-brand"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-sm font-semibold text-brand">Số lượng: {item.qty}</span>
+                  )}
+                  <div className="text-right">
+                    <span className="block text-[10px] uppercase text-muted-foreground">Thành tiền</span>
+                    <strong className="text-sm text-brand">
+                      {formatPrice(parsePrice(item.price) * item.qty)}
+                    </strong>
+                  </div>
+                </div>
+              </article>
             </div>
           ))
         ) : (
@@ -301,7 +365,7 @@ function CheckoutPage() {
         )}
 
         {/* Continue / Total */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-6">
+        <div className="mt-6 flex flex-col items-stretch justify-between gap-5 sm:flex-row sm:flex-wrap sm:items-center">
           <Link
             to="/gio-hang"
             search={slug ? { slug, qty, size } : {}}
@@ -309,7 +373,7 @@ function CheckoutPage() {
           >
             <ChevronLeft className="w-4 h-4" /> QUAY VỀ GIỎ HÀNG
           </Link>
-          <div className="text-right">
+          <div className="text-left sm:text-right">
             <div className="text-sm">
               <span className="text-brand">Phí vận chuyển: Miễn phí</span>
             </div>
@@ -325,7 +389,7 @@ function CheckoutPage() {
           THÔNG TIN MUA HÀNG
         </h2>
 
-        <form onSubmit={handleSubmit} className="mt-6 max-w-3xl mx-auto space-y-5 bg-brand-soft/20 border border-brand/10 p-6 md:p-8 rounded-xl shadow-xs">
+        <form onSubmit={handleSubmit} className="mt-6 max-w-3xl mx-auto space-y-5 bg-brand-soft/20 border border-brand/10 p-4 sm:p-6 md:p-8 rounded-xl shadow-xs">
           
           {/* Saved Addresses Section (UC11 Selection) */}
           {currentUser && savedAddresses.length > 0 && (
@@ -465,7 +529,7 @@ function CheckoutPage() {
           <div className="text-center pt-4">
             <button
               type="submit"
-              className="bg-price text-white rounded-md px-14 py-3.5 text-sm font-bold tracking-widest hover:opacity-95 shadow-md active:scale-[0.99] transition-all cursor-pointer"
+              className="w-full bg-price text-white rounded-md px-5 py-3.5 text-xs font-bold tracking-wider hover:opacity-95 shadow-md active:scale-[0.99] transition-all cursor-pointer sm:w-auto sm:px-14 sm:text-sm sm:tracking-widest"
             >
               THANH TOÁN KHI NHẬN HÀNG (COD)
             </button>

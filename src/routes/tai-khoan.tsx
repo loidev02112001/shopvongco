@@ -1573,7 +1573,7 @@ function AccountPage() {
       <TopBar />
       <NavBar />
 
-      <section className="max-w-2xl mx-auto px-6 py-12">
+      <section className="max-w-2xl mx-auto px-4 py-9 sm:px-6 sm:py-12">
         {/* Page title */}
         <div className="mb-6">
           <h1 className="font-display text-3xl text-brand font-bold tracking-wider flex items-center gap-3">

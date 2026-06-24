@@ -345,14 +345,14 @@ function EditorialAdminDashboard() {
   if (!currentUser || (currentUser.role !== "MANAGER" && currentUser.role !== "ADMIN")) {
     return (
       <div 
-        className="min-h-screen bg-[#07090e] text-white flex flex-col items-center justify-center p-6"
+        className="relative min-h-screen overflow-hidden bg-[#07090e] text-white flex flex-col items-center justify-center p-4 sm:p-6"
         style={{ fontFamily: "'Ysabeau Office', sans-serif" }}
       >
         {/* Ambient background glows */}
-        <div className="absolute top-1/4 left-1/4 w-[400px] h-[400px] rounded-full blur-[140px] opacity-20 bg-amber-500/30 pointer-events-none" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full blur-[140px] opacity-10 bg-emerald-500/20 pointer-events-none" />
+        <div className="absolute top-1/4 left-1/4 w-[min(400px,80vw)] aspect-square rounded-full blur-[140px] opacity-20 bg-amber-500/30 pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-[min(400px,80vw)] aspect-square rounded-full blur-[140px] opacity-10 bg-emerald-500/20 pointer-events-none" />
 
-        <div className="max-w-md w-full bg-[#0d111d]/90 backdrop-blur-md rounded-[32px] border border-white/10 shadow-2xl p-10 text-center relative overflow-hidden">
+        <div className="max-w-md w-full bg-[#0d111d]/90 backdrop-blur-md rounded-2xl sm:rounded-[32px] border border-white/10 shadow-2xl p-6 sm:p-10 text-center relative overflow-hidden">
           <div className="w-16 h-16 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-6">
             <ShieldAlert className="w-8 h-8" />
           </div>
@@ -978,7 +978,7 @@ function EditorialAdminDashboard() {
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] rounded-full blur-[160px] opacity-10 bg-emerald-500/10 pointer-events-none" />
 
       {/* Luxury Editorial Header */}
-      <header className="border-b border-white/5 bg-[#0a0d18]/50 backdrop-blur-md sticky top-0 z-30 px-8 py-5 flex items-center justify-between">
+      <header className="border-b border-white/5 bg-[#0a0d18]/50 backdrop-blur-md sticky top-0 z-30 px-4 py-4 sm:px-8 sm:py-5 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <div>
             <span className="text-[9px] font-extrabold uppercase tracking-[0.25em] text-amber-500">Luna Jewel Suite</span>
@@ -1025,7 +1025,7 @@ function EditorialAdminDashboard() {
       </header>
 
       {/* Main Luxury Admin Layout */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-6 py-10 flex flex-col gap-10">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 py-7 flex flex-col gap-7 sm:px-6 sm:py-10 sm:gap-10">
         
         {/* Editorial Title Banner */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-white/5">
@@ -1195,7 +1195,7 @@ function EditorialAdminDashboard() {
         <div className="space-y-6">
 
           {/* Luxury Editorial Tabs Selector */}
-          <div className="flex border-b border-white/5 pb-px gap-8">
+          <div className="flex max-w-full gap-6 overflow-x-auto border-b border-white/5 pb-px scrollbar-thin sm:gap-8">
             <button
               onClick={() => {
                 setActiveTab("products");
@@ -2947,7 +2947,7 @@ function EditorialAdminDashboard() {
 
             {/* Premium Social Links Management panel */}
             {activeTab === "links" && (
-              <div className="max-w-2xl mx-auto w-full bg-[#0a0d14]/80 backdrop-blur-md rounded-[32px] border border-white/5 shadow-2xl p-8 relative overflow-hidden">
+              <div className="max-w-2xl mx-auto w-full bg-[#0a0d14]/80 backdrop-blur-md rounded-2xl sm:rounded-[32px] border border-white/5 shadow-2xl p-5 sm:p-8 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full blur-[80px] opacity-10 bg-amber-500/30 pointer-events-none" />
                 <div className="absolute bottom-0 left-0 w-[200px] h-[200px] rounded-full blur-[80px] opacity-5 bg-emerald-500/20 pointer-events-none" />
 
@@ -3123,7 +3123,7 @@ function EditorialAdminDashboard() {
           <div className="absolute inset-y-0 right-0 max-w-xl w-full bg-[#0a0d14] border-l border-white/10 shadow-2xl flex flex-col h-full animate-slideLeft">
             
             {/* Drawer Header */}
-            <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-[#0e121d]">
+            <div className="px-4 py-4 sm:px-8 sm:py-6 border-b border-white/5 flex items-center justify-between bg-[#0e121d]">
               <div>
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Luxury Editor</span>
                 <h3 
@@ -3142,7 +3142,7 @@ function EditorialAdminDashboard() {
             </div>
 
             {/* Drawer Scrollable Body */}
-            <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin">
+            <form onSubmit={handleSave} className="flex-1 overflow-y-auto px-4 py-5 space-y-6 scrollbar-thin sm:px-8 sm:py-6">
               
               {/* Slug (Only active during creation) */}
               <div className="space-y-1.5">
@@ -3679,7 +3679,7 @@ function EditorialAdminDashboard() {
             </form>
 
             {/* Drawer Footer Actions */}
-            <div className="px-8 py-5 border-t border-white/5 bg-[#0e121d] flex items-center gap-3">
+            <div className="px-4 py-4 border-t border-white/5 bg-[#0e121d] flex items-center gap-2 sm:px-8 sm:py-5 sm:gap-3">
               <button
                 onClick={handleSave}
                 disabled={isSubmitting}
@@ -3716,7 +3716,7 @@ function EditorialAdminDashboard() {
           <div className="absolute inset-y-0 right-0 max-w-xl w-full bg-[#0a0d14] border-l border-white/10 shadow-2xl flex flex-col h-full animate-slideLeft">
             
             {/* Drawer Header */}
-            <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-[#0e121d]">
+            <div className="px-4 py-4 sm:px-8 sm:py-6 border-b border-white/5 flex items-center justify-between bg-[#0e121d]">
               <div>
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Luxury Editor</span>
                 <h3 
@@ -3735,7 +3735,7 @@ function EditorialAdminDashboard() {
             </div>
 
             {/* Drawer Scrollable Body */}
-            <form onSubmit={handleSaveCollection} className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin">
+            <form onSubmit={handleSaveCollection} className="flex-1 overflow-y-auto px-4 py-5 space-y-6 scrollbar-thin sm:px-8 sm:py-6">
               
               {/* Slug ID (Only active during creation) */}
               <div className="space-y-1.5">
@@ -4016,7 +4016,7 @@ function EditorialAdminDashboard() {
             </form>
 
             {/* Drawer Footer Actions */}
-            <div className="px-8 py-5 border-t border-white/5 bg-[#0e121d] flex items-center gap-3">
+            <div className="px-4 py-4 border-t border-white/5 bg-[#0e121d] flex items-center gap-2 sm:px-8 sm:py-5 sm:gap-3">
               <button
                 onClick={handleSaveCollection}
                 disabled={colIsSubmitting}
@@ -4054,7 +4054,7 @@ function EditorialAdminDashboard() {
           <div className="absolute inset-y-0 right-0 max-w-xl w-full bg-[#0a0d14] border-l border-white/10 shadow-2xl flex flex-col h-full animate-slideLeft">
             
             {/* Drawer Header */}
-            <div className="px-8 py-6 border-b border-white/5 flex items-center justify-between bg-[#0e121d]">
+            <div className="px-4 py-4 sm:px-8 sm:py-6 border-b border-white/5 flex items-center justify-between bg-[#0e121d]">
               <div>
                 <span className="text-[9px] font-extrabold uppercase tracking-[0.2em] text-amber-500">Luxury Editor</span>
                 <h3 
@@ -4073,7 +4073,7 @@ function EditorialAdminDashboard() {
             </div>
 
             {/* Drawer Scrollable Body */}
-            <form onSubmit={handleSaveSlide} className="flex-1 overflow-y-auto px-8 py-6 space-y-6 scrollbar-thin">
+            <form onSubmit={handleSaveSlide} className="flex-1 overflow-y-auto px-4 py-5 space-y-6 scrollbar-thin sm:px-8 sm:py-6">
               
               {/* Slide ID (Only active during creation) */}
               <div className="space-y-1.5">
@@ -4230,7 +4230,7 @@ function EditorialAdminDashboard() {
             </form>
 
             {/* Drawer Footer Actions */}
-            <div className="px-8 py-5 border-t border-white/5 bg-[#0e121d] flex items-center gap-3">
+            <div className="px-4 py-4 border-t border-white/5 bg-[#0e121d] flex items-center gap-2 sm:px-8 sm:py-5 sm:gap-3">
               <button
                 onClick={handleSaveSlide}
                 disabled={slideIsSubmitting}

@@ -76,10 +76,10 @@ function OrdersPage() {
       <TopBar />
       <NavBar />
 
-      <section className="max-w-4xl mx-auto px-6 py-12">
+      <section className="max-w-4xl mx-auto px-4 py-9 sm:px-6 sm:py-12">
         {/* Title Section */}
         <div className="mb-8">
-          <h1 className="font-display text-3xl text-brand font-bold tracking-wider flex items-center gap-3">
+          <h1 className="font-display text-2xl text-brand font-bold tracking-wider flex items-center gap-3 sm:text-3xl">
             <Package className="w-8 h-8" />
             ĐƠN HÀNG CỦA TÔI
           </h1>
@@ -90,7 +90,7 @@ function OrdersPage() {
 
         {/* Chưa đăng nhập */}
         {!currentUser && (
-          <div className="bg-white rounded-2xl p-10 border border-border text-center shadow-xs max-w-md mx-auto mt-8">
+          <div className="bg-white rounded-2xl p-6 border border-border text-center shadow-xs max-w-md mx-auto mt-8 sm:p-10">
             <ShoppingBag className="w-16 h-16 text-brand/35 mx-auto mb-4" />
             <h2 className="text-base font-bold text-foreground">Bạn chưa đăng nhập</h2>
             <p className="text-xs text-muted-foreground/80 mt-1.5 leading-relaxed">
@@ -115,7 +115,7 @@ function OrdersPage() {
               </div>
             ) : orders.length === 0 ? (
               /* Danh sách trống */
-              <div className="bg-white rounded-2xl p-12 border border-border text-center shadow-xs">
+              <div className="bg-white rounded-2xl p-7 border border-border text-center shadow-xs sm:p-12">
                 <ShoppingBag className="w-14 h-14 text-muted-foreground/35 mx-auto mb-4" />
                 <h3 className="text-sm font-bold text-foreground">Bạn chưa mua đơn hàng nào</h3>
                 <p className="text-xs text-muted-foreground/75 mt-1 max-w-xs mx-auto">

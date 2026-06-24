@@ -409,7 +409,7 @@ function DichVuPage() {
       <TopBar />
       <NavBar />
 
-      <main className="max-w-6xl mx-auto px-6 py-10 grid grid-cols-1 md:grid-cols-[260px_1fr] gap-10">
+      <main className="max-w-6xl mx-auto px-4 py-8 grid grid-cols-1 md:grid-cols-[260px_1fr] gap-8 sm:px-6 sm:py-10 md:gap-10">
         <aside>
           <h3 className="text-sm font-bold uppercase tracking-wide text-brand mb-4">
             Danh mục trang

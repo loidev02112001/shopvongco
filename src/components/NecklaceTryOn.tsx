@@ -1574,7 +1574,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
   return (
     <section
       id="thu-vong-co-truc-tuyen"
-      className="max-w-7xl mx-auto px-6 mt-16"
+      className="max-w-7xl mx-auto px-4 mt-12 sm:px-6 sm:mt-16"
       aria-label="Thử vòng cổ trực tuyến"
     >
       <div className="text-center">
@@ -1589,7 +1589,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
 
       <div className="mt-8 grid grid-cols-1 lg:grid-cols-[1.05fr_0.95fr] gap-6 items-start">
         {/* Try-on Preview Screen */}
-        <div className="bg-brand-soft/20 rounded-xl p-5 border border-brand/10 flex flex-col gap-4 shadow-sm">
+        <div className="bg-brand-soft/20 rounded-xl p-3 border border-brand/10 flex flex-col gap-4 shadow-sm sm:p-5">
           {/* Main Visual Screen */}
           <div
             className="relative w-full mx-auto bg-slate-900 rounded-xl overflow-hidden border border-slate-800/80 shadow-inner group aspect-4/5 sm:aspect-3/4 md:aspect-3/4 lg:aspect-3/4 xl:aspect-4/5 max-h-[72vh]"
@@ -1780,11 +1780,11 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
           )}
 
           {/* Controls button panel */}
-          <div className="mt-4 flex flex-wrap gap-2.5 justify-center">
+          <div className="mt-4 grid grid-cols-1 gap-2.5 sm:flex sm:flex-wrap sm:justify-center">
             <button
               type="button"
               onClick={() => inputRef.current?.click()}
-              className="inline-flex items-center gap-2 bg-brand text-brand-foreground px-5 py-3 text-xs font-bold rounded-lg tracking-wider hover:bg-brand/95 shadow-sm transition active:scale-[0.98]"
+              className="inline-flex min-h-11 items-center justify-center gap-2 bg-brand text-brand-foreground px-4 py-3 text-xs font-bold rounded-lg tracking-wider hover:bg-brand/95 shadow-sm transition active:scale-[0.98] sm:px-5"
             >
               <Upload className="w-4 h-4" /> {photo ? "ĐỔI ẢNH CHÂN DUNG" : "TẢI ẢNH LÊN"}
             </button>
@@ -1818,7 +1818,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
               <button
                 type="button"
                 onClick={startCamera}
-                className="inline-flex items-center gap-2 border border-brand/30 bg-white text-brand px-5 py-3 text-xs font-bold rounded-lg tracking-wider hover:bg-brand-soft transition active:scale-[0.98]"
+                className="inline-flex min-h-11 items-center justify-center gap-2 border border-brand/30 bg-white text-brand px-4 py-3 text-xs font-bold rounded-lg tracking-wider hover:bg-brand-soft transition active:scale-[0.98] sm:px-5"
               >
                 <Camera className="w-4 h-4" /> MỞ LIVE CAMERA
               </button>
@@ -1867,7 +1867,7 @@ export function NecklaceTryOn({ initSlug, initImage }: NecklaceTryOnProps) {
         </div>
 
         {/* Necklace picker grid */}
-        <div className="bg-white rounded-xl p-5 border border-brand/15 flex flex-col justify-between shadow-xs">
+        <div className="bg-white rounded-xl p-3 border border-brand/15 flex flex-col justify-between shadow-xs sm:p-5">
           <div>
             <div className="flex items-center justify-between pb-3 border-b border-brand/5 mb-3">
               <div className="flex items-center gap-2 min-w-0">

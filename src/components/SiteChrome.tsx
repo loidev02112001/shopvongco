@@ -15,6 +15,9 @@ import {
   LogOut,
   Package,
   Settings,
+  Menu,
+  X,
+  ChevronRight,
 } from "lucide-react";
 import { LunaJewelLogo } from "@/components/LunaJewelLogo";
 import { products } from "@/data/products";
@@ -61,15 +64,20 @@ export function TopBar() {
   const wishCount = wishlist.length;
   return (
     <div className="bg-white">
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-6">
+      <div className="max-w-7xl mx-auto px-4 py-3 lg:px-6 lg:py-4 flex flex-wrap lg:flex-nowrap items-center gap-3 lg:gap-6">
         <Link to="/" className="shrink-0">
-          <LunaJewelLogo variant="full" height={52} />
+          <span className="block lg:hidden">
+            <LunaJewelLogo variant="full" height={42} />
+          </span>
+          <span className="hidden lg:block">
+            <LunaJewelLogo variant="full" height={52} />
+          </span>
         </Link>
-        <div className="flex-1 max-w-2xl mx-auto">
+        <div className="order-last w-full lg:order-none lg:flex-1 lg:max-w-2xl lg:mx-auto">
           <SearchForm />
         </div>
 
-        <div className="flex items-center gap-5 text-brand">
+        <div className="ml-auto flex items-center gap-4 lg:gap-5 text-brand">
           <Link to="/yeu-thich" aria-label="Yêu thích" className="relative">
             <Heart className="w-5 h-5" />
             {wishCount > 0 && (
@@ -88,7 +96,7 @@ export function TopBar() {
           </Link>
           <UserMenu />
         </div>
-        <div className="flex flex-col gap-1.5 text-xs">
+        <div className="hidden lg:flex flex-col gap-1.5 text-xs">
           <Link
             to="/thong-bao"
             className="flex items-center gap-1.5 border border-brand/40 rounded-full px-3 py-1 text-foreground/70 hover:bg-brand-soft transition"
@@ -244,7 +252,7 @@ function SearchForm() {
           e.preventDefault();
           go(undefined, q);
         }}
-        className="flex items-stretch rounded-full border border-brand/40 overflow-hidden bg-white"
+        className="flex min-w-0 items-stretch rounded-full border border-brand/40 overflow-hidden bg-white"
       >
         <input
           type="text"
@@ -256,13 +264,14 @@ function SearchForm() {
           onFocus={() => setOpen(true)}
           onMouseEnter={() => setOpen(true)}
           placeholder="Tìm kiếm sản phẩm..."
-          className="flex-1 px-5 py-2.5 text-sm outline-none bg-transparent"
+          className="min-w-0 flex-1 px-4 py-2.5 text-sm outline-none bg-transparent lg:px-5"
         />
         <button
           type="submit"
-          className="bg-brand text-brand-foreground px-8 text-sm font-medium hover:opacity-90 transition"
+          className="shrink-0 bg-brand text-brand-foreground px-4 text-sm font-medium hover:opacity-90 transition lg:px-8"
         >
-          Search
+          <SearchIcon className="h-4 w-4 lg:hidden" />
+          <span className="hidden lg:inline">Search</span>
         </button>
       </form>
 
@@ -311,10 +320,21 @@ const navItems: { label: string; to: string }[] = [
 ];
 
 export function NavBar() {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileOpen]);
+
   return (
-    <div className="bg-brand text-brand-foreground">
-      <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-        <nav className="flex">
+    <div className="relative z-40 bg-brand text-brand-foreground">
+      <div className="hidden max-w-7xl mx-auto px-6 lg:flex items-center justify-between">
+        <nav className="flex min-w-0">
           {navItems.map((it) => (
             <Link
               key={it.label}
@@ -331,6 +351,79 @@ export function NavBar() {
           Ưu Đãi Mỗi Tuần
         </button>
       </div>
+
+      <div className="flex items-center justify-between px-4 py-2.5 lg:hidden">
+        <button
+          type="button"
+          onClick={() => setMobileOpen(true)}
+          className="inline-flex min-h-11 items-center gap-2 text-sm font-bold uppercase tracking-wide"
+          aria-label="Mở menu"
+        >
+          <Menu className="h-5 w-5" />
+          Danh mục
+        </button>
+        <Link
+          to="/bo-suu-tap"
+          className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-brand"
+        >
+          Ưu đãi mỗi tuần
+        </Link>
+      </div>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/45"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Đóng menu"
+          />
+          <div className="absolute inset-y-0 left-0 flex w-[min(86vw,340px)] flex-col bg-white text-foreground shadow-2xl">
+            <div className="flex items-center justify-between border-b px-5 py-4">
+              <LunaJewelLogo variant="full" height={44} />
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full border text-brand"
+                aria-label="Đóng menu"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="flex-1 overflow-y-auto px-3 py-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.label}
+                  to={item.to}
+                  onClick={() => setMobileOpen(false)}
+                  activeOptions={{ exact: true }}
+                  activeProps={{ className: "bg-brand-soft text-brand" }}
+                  className="flex min-h-12 items-center justify-between rounded-md px-4 text-sm font-bold tracking-wide hover:bg-brand-soft"
+                >
+                  {item.label}
+                  <ChevronRight className="h-4 w-4" />
+                </Link>
+              ))}
+            </nav>
+            <div className="grid grid-cols-2 gap-2 border-t p-4 text-xs font-semibold">
+              <Link
+                to="/thong-bao"
+                onClick={() => setMobileOpen(false)}
+                className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-brand/30"
+              >
+                <Bell className="h-4 w-4 text-brand" /> Thông báo
+              </Link>
+              <Link
+                to="/ho-tro"
+                onClick={() => setMobileOpen(false)}
+                className="flex min-h-11 items-center justify-center gap-2 rounded-md border border-brand/30"
+              >
+                <HelpCircle className="h-4 w-4 text-brand" /> Hỗ trợ
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -368,7 +461,7 @@ export function ProductCardSkeleton({ dark = false }: { dark?: boolean }) {
   }
 
   return (
-    <div className="bg-white rounded-xl overflow-hidden border border-slate-100 shadow-3xs animate-pulse flex flex-col justify-between h-[330px] md:h-[360px]">
+    <div className="bg-white rounded-xl overflow-hidden border border-slate-100 shadow-3xs animate-pulse flex flex-col justify-between h-[260px] sm:h-[330px] md:h-[360px]">
       <div className="relative aspect-square bg-slate-100/60 flex items-center justify-center overflow-hidden">
         <div className="w-12 h-4 bg-slate-200/40 rounded-full" />
       </div>
@@ -465,7 +558,7 @@ export function Footer() {
   const { socialLinks } = useStore();
   return (
     <footer className="mt-20 bg-brand-soft border-t border-brand/20">
-      <div className="max-w-7xl mx-auto px-6 py-10 grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+      <div className="max-w-7xl mx-auto px-4 py-9 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm lg:px-6 lg:py-10">
         {/* Chính Sách */}
         <div>
           <h4 className="font-bold mb-4 text-sm text-brand">

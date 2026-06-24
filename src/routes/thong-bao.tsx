@@ -41,7 +41,7 @@ function NotificationsPage() {
     <div className="min-h-screen bg-white">
       <TopBar />
       <NavBar />
-      <section className="max-w-3xl mx-auto px-6 py-10">
+      <section className="max-w-3xl mx-auto px-4 py-8 sm:px-6 sm:py-10">
         <div className="flex items-center justify-between">
           <h1 className="font-display text-3xl text-brand font-semibold tracking-wide flex items-center gap-3">
             <Bell className="w-6 h-6" /> THÔNG BÁO

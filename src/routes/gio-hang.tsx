@@ -70,9 +70,9 @@ function CartPage() {
       <TopBar />
       <NavBar />
 
-      <section className="max-w-7xl mx-auto px-6 pt-8">
+      <section className="max-w-7xl mx-auto px-4 pt-6 sm:px-6 sm:pt-8">
         {/* Header row */}
-        <div className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 border-b border-brand/40 pb-3 text-sm font-semibold text-brand">
+        <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 border-b border-brand/40 pb-3 text-sm font-semibold text-brand">
           <div>THÔNG TIN SẢN PHẨM</div>
           <div className="text-center">GIÁ</div>
           <div className="text-center">SỐ LƯỢNG</div>
@@ -89,10 +89,8 @@ function CartPage() {
           </div>
         ) : (
           rows.map((r) => (
-            <div
-              key={`${r.slug}-${r.size}`}
-              className="grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center py-5 border-b border-brand/20"
-            >
+            <div key={`${r.slug}-${r.size}`}>
+              <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_auto] gap-4 items-center py-5 border-b border-brand/20">
               <div className="flex items-center gap-4">
                 <Link
                   to="/san-pham/$slug"
@@ -151,26 +149,90 @@ function CartPage() {
                   <X className="w-4 h-4" />
                 </button>
               </div>
+              </div>
+
+              <article className="border-b border-brand/20 py-5 md:hidden">
+                <div className="flex gap-3">
+                  <Link
+                    to="/san-pham/$slug"
+                    params={{ slug: r.slug }}
+                    className="shrink-0"
+                  >
+                    <img
+                      src={r.product.img}
+                      alt={r.product.name}
+                      className="h-24 w-24 rounded-md border border-brand/10 object-cover"
+                    />
+                  </Link>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link
+                        to="/san-pham/$slug"
+                        params={{ slug: r.slug }}
+                        className="line-clamp-2 text-sm font-bold leading-snug text-brand"
+                      >
+                        {r.product.shortName}
+                      </Link>
+                      <button
+                        onClick={() => removeItem(r.slug, r.size)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-price"
+                        aria-label="Xóa"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                    <span className="mt-2 inline-flex rounded bg-brand-soft/60 px-2 py-1 text-[10px] font-bold text-brand">
+                      Kích thước: {r.size}
+                    </span>
+                    <p className="mt-2 text-sm font-bold text-price">
+                      {formatPrice(parsePrice(r.product.price))}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => updateQty(r.slug, r.size, -1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-brand/40 text-brand"
+                    >
+                      <Minus className="h-4 w-4" />
+                    </button>
+                    <span className="min-w-6 text-center font-semibold">{r.qty}</span>
+                    <button
+                      onClick={() => updateQty(r.slug, r.size, 1)}
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-brand/40 text-brand"
+                    >
+                      <Plus className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="text-right">
+                    <span className="block text-[10px] uppercase text-muted-foreground">Thành tiền</span>
+                    <strong className="text-sm text-brand">
+                      {formatPrice(parsePrice(r.product.price) * r.qty)}
+                    </strong>
+                  </div>
+                </div>
+              </article>
             </div>
           ))
         )}
 
         {/* Continue + coupon */}
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-6">
+        <div className="mt-6 flex flex-col items-stretch justify-between gap-5 sm:flex-row sm:flex-wrap sm:items-center">
           <Link
             to="/bo-suu-tap"
             className="text-sm text-brand flex items-center gap-1 hover:underline"
           >
             <ChevronLeft className="w-4 h-4" /> Tiếp tục mua hàng
           </Link>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
             <span className="text-sm font-semibold text-brand">
               MÃ GIẢM GIÁ
             </span>
-            <div className="flex items-stretch border border-brand/40 rounded-full overflow-hidden bg-white">
+            <div className="flex min-w-0 flex-1 items-stretch overflow-hidden rounded-full border border-brand/40 bg-white sm:flex-none">
               <input
                 type="text"
-                className="px-4 py-1.5 text-sm outline-none w-56 bg-transparent"
+                className="min-w-0 flex-1 bg-transparent px-4 py-2 text-sm outline-none sm:w-56"
               />
               <button className="bg-brand text-brand-foreground px-4 hover:opacity-90">
                 <ChevronRight className="w-4 h-4" />
@@ -182,8 +244,8 @@ function CartPage() {
         <hr className="my-6 border-brand/30" />
 
         {/* Total + order */}
-        <div className="flex flex-col items-end gap-3">
-          <div className="text-lg">
+        <div className="flex flex-col items-stretch gap-4 sm:items-end">
+          <div className="flex items-baseline justify-between gap-3 text-base sm:block sm:text-lg">
             <span className="text-brand font-semibold">TỔNG TIỀN: </span>
             <span className="text-price text-2xl font-bold ml-3">
               {formatPrice(total)}
@@ -198,7 +260,7 @@ function CartPage() {
                 navigate({ to: "/thanh-toan", search: { slug: first.slug, qty: first.qty, size: first.size } });
               }
             }}
-            className="bg-price text-white rounded-md px-16 py-3 t-buy tracking-wide hover:opacity-90 transition"
+            className="w-full bg-price text-white rounded-md px-6 py-3.5 t-buy tracking-wide hover:opacity-90 transition sm:w-auto sm:px-16 sm:py-3"
           >
             ĐẶT HÀNG
           </button>
@@ -206,11 +268,11 @@ function CartPage() {
       </section>
 
       {/* Featured */}
-      <section className="max-w-7xl mx-auto px-6 mt-14">
+      <section className="max-w-7xl mx-auto px-4 mt-12 sm:px-6 sm:mt-14">
         <h2 className="t-h-main text-center text-brand tracking-wide">
           SẢN PHẨM NỔI BẬT
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-5 mt-6 sm:mt-8">
           {featured.map((p) => (
             <ProductCard
               key={p.slug}

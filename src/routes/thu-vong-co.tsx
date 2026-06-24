@@ -74,7 +74,7 @@ function ThuVongCoPage() {
       <NecklaceTryOn initSlug={slug} initImage={img} />
 
       {/* Khắc thông điệp */}
-      <section className="max-w-5xl mx-auto px-6 mt-16 text-center">
+      <section className="max-w-5xl mx-auto px-4 mt-12 text-center sm:px-6 sm:mt-16">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground tracking-wide font-display">
           KHẮC THÔNG ĐIỆP CÁ NHÂN HOÁ
         </h2>
@@ -97,7 +97,7 @@ function ThuVongCoPage() {
         <div className="mt-16">
           <h3 className="text-xl md:text-2xl font-bold text-brand">BƯỚC 2</h3>
           <p className="mt-2 text-foreground/75 font-medium">Sáng tạo thông điệp cá nhân hoá</p>
-          <div className="mt-8 grid grid-cols-5 gap-6 max-w-md mx-auto text-brand">
+          <div className="mt-8 grid grid-cols-5 gap-3 max-w-md mx-auto text-brand sm:gap-6">
             {symbols.map((Icon, i) => (
               <div key={i} className="flex items-center justify-center">
                 <Icon className="w-8 h-8" strokeWidth={1.5} />
@@ -129,7 +129,7 @@ function ThuVongCoPage() {
           <button
             type="button"
             onClick={() => navigate({ to: "/bo-suu-tap" })}
-            className="mt-10 bg-brand text-brand-foreground px-10 py-3 text-sm font-bold tracking-wider transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5"
+            className="mt-10 w-full bg-brand text-brand-foreground px-6 py-3 text-sm font-bold tracking-wider transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 sm:w-auto sm:px-10"
           >
             KHÁM PHÁ NGAY
           </button>
@@ -137,7 +137,7 @@ function ThuVongCoPage() {
       </section>
 
       {/* Sản phẩm thực tế */}
-      <section className="max-w-7xl mx-auto px-6 mt-20">
+      <section className="max-w-7xl mx-auto px-4 mt-14 sm:px-6 sm:mt-20">
         <h2 className="text-2xl md:text-3xl font-bold text-foreground text-center tracking-wide font-display">
           SẢN PHẨM THỰC TẾ
         </h2>
@@ -170,7 +170,7 @@ function ThuVongCoPage() {
       </section>
 
       {/* CTA strip */}
-      <section className="max-w-7xl mx-auto px-6 mt-10">
+      <section className="max-w-7xl mx-auto px-4 mt-10 sm:px-6">
         <div className="group flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-brand/20 py-8 px-7 rounded-xl bg-brand-soft/30 hover:shadow-md cursor-pointer transition-all duration-300">
           <div>
             <p className="text-lg md:text-xl font-bold text-brand tracking-wider">LUNA JEWEL CLUB</p>
@@ -183,7 +183,7 @@ function ThuVongCoPage() {
             onClick={() => {
               navigate({ to: "/tai-khoan" });
             }}
-            className="bg-brand text-brand-foreground px-10 py-3.5 text-sm font-bold tracking-wider transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 rounded"
+            className="w-full bg-brand text-brand-foreground px-6 py-3.5 text-sm font-bold tracking-wider transition-all duration-200 hover:opacity-90 hover:shadow-xl hover:-translate-y-0.5 rounded md:w-auto md:px-10"
           >
             ĐĂNG KÝ NGAY
           </button>

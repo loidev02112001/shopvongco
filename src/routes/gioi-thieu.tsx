@@ -43,7 +43,7 @@ function GioiThieuPage() {
       <TopBar />
       <NavBar />
 
-      <main className="max-w-5xl mx-auto px-6 pb-16">
+      <main className="max-w-5xl mx-auto px-4 pb-12 sm:px-6 sm:pb-16">
         <SectionTitle>LUNA JEWEL – ÁNH TRĂNG HUYỀN DIỆU</SectionTitle>
         <p className="text-foreground/80 leading-relaxed">
           Lấy cảm hứng từ ánh trăng – biểu tượng của vẻ đẹp dịu dàng nhưng đầy

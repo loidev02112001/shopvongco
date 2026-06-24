@@ -707,7 +707,7 @@ function CollectionPage() {
         {/* Banner Skeleton */}
         <section className="w-full bg-slate-100/50 animate-pulse aspect-[21/9] sm:aspect-[3/1]" />
 
-        <section className="max-w-7xl mx-auto px-6 py-12">
+        <section className="max-w-7xl mx-auto px-4 py-9 sm:px-6 sm:py-12">
           {/* Filter Bar Skeleton */}
           <div className="bg-slate-50 border border-slate-100 rounded-xl p-6 h-24 animate-pulse mb-12" />
 
@@ -862,7 +862,7 @@ function CollectionPage() {
         )}
       </section>
 
-      <section className="max-w-7xl mx-auto px-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6">
         
         {/* Gallery Collections Intro (Chỉ hiển thị ở chế độ trang chủ BST - Không tìm kiếm, không xem riêng 1 BST) */}
         {!isSearchActive && !isSingleCollectionMode && (

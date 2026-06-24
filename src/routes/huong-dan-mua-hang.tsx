@@ -19,7 +19,7 @@ function HuongDanMuaHangPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
       <NavBar />
-      <main className="max-w-3xl mx-auto px-6 py-16 flex-1">
+      <main className="max-w-3xl mx-auto px-4 py-10 flex-1 sm:px-6 sm:py-16">
         <h1 className="text-3xl font-bold text-foreground mb-8">Hướng Dẫn Mua Hàng</h1>
         <div className="space-y-8">
           {steps.map((s) => (

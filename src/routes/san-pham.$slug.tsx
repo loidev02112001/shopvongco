@@ -186,7 +186,7 @@ function ProductDetail() {
       <NavBar />
 
       {/* Top: details */}
-      <section className="max-w-7xl mx-auto px-4 md:px-6 pt-8">
+      <section className="max-w-7xl mx-auto px-4 md:px-6 pt-5 sm:pt-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-14">
           
           {/* Left: Info details */}
@@ -197,7 +197,7 @@ function ProductDetail() {
               </h1>
 
               {/* Rating Summary */}
-              <div className="flex items-center gap-2 mt-3.5 pb-4 border-b border-brand/5">
+              <div className="flex flex-wrap items-center gap-2 mt-3.5 pb-4 border-b border-brand/5">
                 <div className="flex text-amber-400">
                   {Array.from({ length: 5 }, (_, i) => (
                     <Star
@@ -210,7 +210,7 @@ function ProductDetail() {
                 </div>
                 <span className="text-sm font-bold text-brand">{avgRating} / 5.0</span>
                 <span className="text-xs text-muted-foreground">({productReviews.length} đánh giá)</span>
-                <span className="mx-2 text-brand/20">|</span>
+                <span className="mx-1 hidden text-brand/20 sm:inline">|</span>
                 <span className="text-xs text-brand bg-brand-soft/50 px-2 py-0.5 rounded font-semibold">Bạc 925 Chuẩn</span>
               </div>
 
@@ -220,7 +220,7 @@ function ProductDetail() {
               {/* Variant Selector (Độ dài dây) */}
               {sizeOptions.length > 0 && (
                 <div className="mt-6 space-y-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span className="text-xs text-gray-500 font-bold uppercase tracking-wider">Độ dài dây (Biến thể):</span>
                     <span className="text-xs text-brand font-bold bg-brand-soft/75 px-2.5 py-0.5 rounded border border-brand/10">
                       {selectedSize}
@@ -246,9 +246,9 @@ function ProductDetail() {
               )}
 
               {/* Quantity Selector */}
-              <div className="mt-6 border border-gray-200 rounded bg-white px-4 py-3 flex items-center w-full max-w-lg shadow-xs">
+              <div className="mt-6 border border-gray-200 rounded bg-white px-3 py-3 flex flex-wrap items-center gap-y-3 w-full max-w-lg shadow-xs sm:px-4">
                 <span className="text-xs text-gray-500 font-bold uppercase tracking-wider whitespace-nowrap">Số Lượng:</span>
-                <div className="flex items-center gap-5 flex-1 justify-center">
+                <div className="flex min-w-[150px] items-center gap-4 flex-1 justify-center sm:gap-5">
                   <button 
                     onClick={() => setQty(Math.max(1, qty - 1))} 
                     className="w-8 h-8 rounded-full border border-gray-200 flex items-center justify-center text-lg font-bold text-gray-500 hover:text-brand hover:border-brand/40 transition-colors"
@@ -269,13 +269,13 @@ function ProductDetail() {
 
             {/* Buy and Add to Cart Buttons */}
             <div className="mt-6">
-              <div className="flex items-stretch gap-3 max-w-lg">
+              <div className="flex items-stretch gap-2.5 max-w-lg sm:gap-3">
                 <button
                   onClick={() => {
                     storeActions.addToCart(product.slug, qty, selectedSize);
                     navigate({ to: "/gio-hang" });
                   }}
-                  className="flex-1 bg-price text-white rounded-xl py-4.5 px-4 hover:opacity-95 shadow-md active:scale-[0.99] transition-all text-center flex flex-col justify-center items-center"
+                  className="min-w-0 flex-1 bg-price text-white rounded-xl py-3.5 px-3 hover:opacity-95 shadow-md active:scale-[0.99] transition-all text-center flex flex-col justify-center items-center sm:py-4.5 sm:px-4"
                 >
                   <div className="font-bold tracking-widest text-xl md:text-2xl">MUA NGAY</div>
                   <div className="text-[12px] opacity-90 mt-1 uppercase tracking-wider font-semibold">Giao nhanh tận nơi hoặc nhận tại cửa hàng</div>
@@ -291,7 +291,7 @@ function ProductDetail() {
                       }
                     });
                   }}
-                  className="border border-brand/50 rounded-xl px-4.5 flex flex-col items-center justify-center text-brand text-[10px] font-bold hover:bg-brand-soft/70 hover:border-brand transition min-w-[75px]"
+                  className="min-w-[72px] border border-brand/50 rounded-xl px-3 flex flex-col items-center justify-center text-brand text-[9px] font-bold hover:bg-brand-soft/70 hover:border-brand transition sm:min-w-[75px] sm:px-4.5 sm:text-[10px]"
                 >
                   <Gift className="w-5 h-5 mb-1" />
                   THÊM VÀO
@@ -363,7 +363,7 @@ function ProductDetail() {
       </section>
 
       {/* Description + specs */}
-      <section className="product-specs-section max-w-7xl mx-auto px-6 mt-16">
+      <section className="product-specs-section max-w-7xl mx-auto px-4 mt-12 sm:px-6 sm:mt-16">
         <h2 className="font-display text-2xl text-brand font-bold border-b border-brand/20 pb-3">MÔ TẢ SẢN PHẨM</h2>
 
         <div className="mt-6 overflow-hidden border border-gray-500 bg-white">
@@ -374,11 +374,11 @@ function ProductDetail() {
                 <tr key={label} className="border-t border-gray-400 first:border-t-0">
                   <th
                     scope="row"
-                    className="w-[32%] border-r border-gray-400 px-5 py-4 text-left text-xs font-semibold text-foreground/85 md:text-sm"
+                    className="w-[42%] border-r border-gray-400 px-3 py-3 text-left text-xs font-semibold text-foreground/85 sm:w-[32%] sm:px-5 sm:py-4 md:text-sm"
                   >
                     {label}
                   </th>
-                  <td className="px-5 py-4 text-xs text-foreground/75 md:text-sm">
+                  <td className="break-words px-3 py-3 text-xs text-foreground/75 sm:px-5 sm:py-4 md:text-sm">
                     {String(value)}
                   </td>
                 </tr>
@@ -568,7 +568,7 @@ function ProductDetail() {
       </section>
 
       {/* Featured products */}
-      <section className="max-w-7xl mx-auto px-6 mt-16">
+      <section className="max-w-7xl mx-auto px-4 mt-12 sm:px-6 sm:mt-16">
         <h2 className="t-h-main text-center text-brand tracking-wide uppercase">SẢN PHẨM KHÁC TỪ LUNA JEWEL</h2>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-8">
           {featured.map((p) => (
